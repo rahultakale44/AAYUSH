@@ -1,0 +1,59 @@
+<resources>
+    <string name="app_name">आयुष</string>
+    <string name="app_name_devanagari">आयुष</string>
+    
+    <!-- Home Screen -->
+    <string name="home_welcome">आयुष में आपका स्वागत है</string>
+    <string name="home_subtitle">आपका आपातकालीन देखभाल नेविगेटर</string>
+    <string name="home_sos_button">एसओएस आपातकाल</string>
+    <string name="home_voice_button">आवाज सहायता</string>
+    <string name="home_profile_button">स्वास्थ्य प्रोफाइल</string>
+    <string name="home_contacts_button">आपातकालीन संपर्क</string>
+    <string name="home_language_button">भाषा</string>
+    <string name="home_journey_button">आपातकालीन यात्रा</string>
+    
+    <!-- Navigation -->
+    <string name="nav_home">होम</string>
+    <string name="nav_profile">प्रोफाइल</string>
+    <string name="nav_contacts">संपर्क</string>
+    <string name="nav_language">भाषा</string>
+    <string name="nav_journey">यात्रा</string>
+    <string name="nav_back">वापस</string>
+    
+    <!-- Language Selection -->
+    <string name="language_title">भाषा चुनें</string>
+    <string name="language_english">English</string>
+    <string name="language_marathi">मराठी</string>
+    <string name="language_hindi">हिंदी</string>
+    
+    <!-- Placeholder Screens -->
+    <string name="profile_title">वरिष्ठ स्वास्थ्य प्रोफाइल</string>
+    <string name="profile_placeholder">आपकी स्वास्थ्य प्रोफाइल आपातकालीन उत्तरदाताओं को आपको सर्वोत्तम देखभाल प्रदान करने में मदद करेगी.\n\nयह सुविधा चरण 2 में लागू की जाएगी.</string>
+    
+    <string name="contacts_title">आपातकालीन संपर्क</string>
+    <string name="contacts_placeholder">परिवार के सदस्यों और देखभाल करने वालों को जोड़ें जिन्हें आपात स्थिति के दौरान सूचित किया जाना चाहिए.\n\nयह सुविधा चरण 2 में लागू की जाएगी.</string>
+    
+    <string name="journey_title">आपातकालीन यात्रा</string>
+    <string name="journey_placeholder">लक्षण रिपोर्ट से अस्पताल देखभाल तक अपनी आपातकालीन यात्रा को ट्रैक करें.\n\nयह सुविधा बाद के चरणों में लागू की जाएगी.</string>
+    
+    <string name="emergency_start_title">आपातकालीन सक्रियण</string>
+    <string name="emergency_start_message">आपातकालीन वर्कफ़्लो लागू किया जा रहा है.\n\nयह प्रोटोटाइप वास्तविक आपातकालीन सेवाओं से संपर्क नहीं करता है.\n\nपूर्ण आपातकालीन लक्षण कैप्चर और ट्राइएज चरण 3 में उपलब्ध होगा.</string>
+    <string name="emergency_start_button">जारी रखें</string>
+    
+    <string name="symptom_capture_title">लक्षण कैप्चर</string>
+    <string name="symptom_capture_message">आवाज-आधारित लक्षण रिपोर्टिंग चरण 3 में लागू की जाएगी.\n\nआप बोलकर अपने लक्षणों का वर्णन कर सकेंगे और आयुष आपकी स्थिति की तात्कालिकता का आकलन करने में मदद करेगा.</string>
+    
+    <!-- Accessibility -->
+    <string name="cd_app_logo">आयुष एप्लिकेशन लोगो</string>
+    <string name="cd_sos_button">आपातकालीन एसओएस बटन - आपातकालीन सहायता सक्रिय करने के लिए टैप करें</string>
+    <string name="cd_voice_button">आवाज सहायता बटन - बोलकर लक्षण रिपोर्ट करने के लिए टैप करें</string>
+    <string name="cd_warning_icon">चेतावनी आइकन</string>
+    
+    <!-- Common -->
+    <string name="button_continue">जारी रखें</string>
+    <string name="button_cancel">रद्द करें</string>
+    <string name="button_close">बंद करें</string>
+    
+    <!-- Prototype Notice -->
+    <string name="prototype_notice">प्रोटोटाइप डेमो - सिम्युलेटेड सुविधाएं</string>
+</resources>

@@ -1,3 +1,59 @@
 <resources>
     <string name="app_name">AAYUSH</string>
+    <string name="app_name_devanagari">आयुष</string>
+    
+    <!-- Home Screen -->
+    <string name="home_welcome">Welcome to AAYUSH</string>
+    <string name="home_subtitle">Your Emergency Care Navigator</string>
+    <string name="home_sos_button">SOS Emergency</string>
+    <string name="home_voice_button">Voice Assistance</string>
+    <string name="home_profile_button">Health Profile</string>
+    <string name="home_contacts_button">Emergency Contacts</string>
+    <string name="home_language_button">Language</string>
+    <string name="home_journey_button">Emergency Journey</string>
+    
+    <!-- Navigation -->
+    <string name="nav_home">Home</string>
+    <string name="nav_profile">Profile</string>
+    <string name="nav_contacts">Contacts</string>
+    <string name="nav_language">Language</string>
+    <string name="nav_journey">Journey</string>
+    <string name="nav_back">Back</string>
+    
+    <!-- Language Selection -->
+    <string name="language_title">Select Language</string>
+    <string name="language_english">English</string>
+    <string name="language_marathi">मराठी (Marathi)</string>
+    <string name="language_hindi">हिंदी (Hindi)</string>
+    
+    <!-- Placeholder Screens -->
+    <string name="profile_title">Senior Health Profile</string>
+    <string name="profile_placeholder">Your health profile will help emergency responders provide you with the best care.\n\nThis feature will be implemented in Phase 2.</string>
+    
+    <string name="contacts_title">Emergency Contacts</string>
+    <string name="contacts_placeholder">Add family members and caregivers who should be notified during emergencies.\n\nThis feature will be implemented in Phase 2.</string>
+    
+    <string name="journey_title">Emergency Journey</string>
+    <string name="journey_placeholder">Track your emergency journey from symptom reporting to hospital care.\n\nThis feature will be implemented in later phases.</string>
+    
+    <string name="emergency_start_title">Emergency Activation</string>
+    <string name="emergency_start_message">The emergency workflow is being implemented.\n\nThis prototype does not contact real emergency services.\n\nFull emergency symptom capture and triage will be available in Phase 3.</string>
+    <string name="emergency_start_button">Continue</string>
+    
+    <string name="symptom_capture_title">Symptom Capture</string>
+    <string name="symptom_capture_message">Voice-based symptom reporting will be implemented in Phase 3.\n\nYou will be able to describe your symptoms by speaking, and AAYUSH will help assess the urgency of your situation.</string>
+    
+    <!-- Accessibility -->
+    <string name="cd_app_logo">AAYUSH application logo</string>
+    <string name="cd_sos_button">Emergency SOS button - Tap to activate emergency assistance</string>
+    <string name="cd_voice_button">Voice assistance button - Tap to report symptoms by speaking</string>
+    <string name="cd_warning_icon">Warning icon</string>
+    
+    <!-- Common -->
+    <string name="button_continue">Continue</string>
+    <string name="button_cancel">Cancel</string>
+    <string name="button_close">Close</string>
+    
+    <!-- Prototype Notice -->
+    <string name="prototype_notice">Prototype Demo - Simulated Features</string>
 </resources>
