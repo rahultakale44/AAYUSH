@@ -9,11 +9,11 @@ import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 
 /**
- * ViewModel for managing senior health profile
+ * ViewModel for managing senior health profile with DataStore persistence
  */
 class ProfileViewModel(application: Application) : AndroidViewModel(application) {
     
-    private val repository = ProfileRepository.getInstance()
+    private val repository = ProfileRepository.getInstance(application)
     
     // State flows for UI
     val healthProfile: StateFlow<HealthProfile?> = repository.healthProfile
@@ -52,7 +52,8 @@ class ProfileViewModel(application: Application) : AndroidViewModel(application)
                 MedicalCondition(
                     conditionName = conditionName.trim(),
                     notes = notes.trim(),
-                    isVerified = false
+                    isVerified = false,
+                    createdAt = System.currentTimeMillis()
                 )
             )
         }
@@ -74,7 +75,8 @@ class ProfileViewModel(application: Application) : AndroidViewModel(application)
                     dosage = dosage.trim(),
                     frequency = frequency.trim(),
                     notes = notes.trim(),
-                    isVerified = false
+                    isVerified = false,
+                    createdAt = System.currentTimeMillis()
                 )
             )
         }
@@ -96,7 +98,8 @@ class ProfileViewModel(application: Application) : AndroidViewModel(application)
                     reaction = reaction.trim(),
                     severity = severity,
                     notes = notes.trim(),
-                    isVerified = false
+                    isVerified = false,
+                    createdAt = System.currentTimeMillis()
                 )
             )
         }
@@ -117,7 +120,8 @@ class ProfileViewModel(application: Application) : AndroidViewModel(application)
                     surgeryName = name.trim(),
                     date = date.trim(),
                     notes = notes.trim(),
-                    isVerified = false
+                    isVerified = false,
+                    createdAt = System.currentTimeMillis()
                 )
             )
         }
@@ -138,7 +142,8 @@ class ProfileViewModel(application: Application) : AndroidViewModel(application)
                     name = name.trim(),
                     relationship = relationship.trim(),
                     phoneNumber = phoneNumber.trim(),
-                    notes = notes.trim()
+                    notes = notes.trim(),
+                    createdAt = System.currentTimeMillis()
                 )
             )
         }

@@ -8,5 +8,5 @@ data class Allergy(
     val notes: String = "",
     val isVerified: Boolean = false,
     val verificationSource: String = "",
-    val createdAt: Long = System.currentTimeMillis()
+    val createdAt: Long = 0L
 )

@@ -6,5 +6,5 @@ data class EmergencyContact(
     val relationship: String,
     val phoneNumber: String,
     val notes: String = "",
-    val createdAt: Long = System.currentTimeMillis()
+    val createdAt: Long = 0L
 )

@@ -56,4 +56,106 @@
     
     <!-- Prototype Notice -->
     <string name="prototype_notice">प्रोटोटाइप डेमो - सिम्युलेटेड वैशिष्ट्ये</string>
+    
+    <!-- Phase 2: Health Profile -->
+    <string name="profile_overview_title">आरोग्य प्रोफाइल</string>
+    <string name="profile_personal_info">वैयक्तिक माहिती</string>
+    <string name="profile_conditions">वैद्यकीय स्थिती</string>
+    <string name="profile_medications">सध्याची औषधे</string>
+    <string name="profile_allergies">ऍलर्जी</string>
+    <string name="profile_surgeries">मागील शस्त्रक्रिया</string>
+    <string name="profile_emergency_contacts">आपत्कालीन संपर्क</string>
+    <string name="profile_consent">माहिती सामायिकरण संमती</string>
+    
+    <!-- Personal Information -->
+    <string name="personal_info_title">वैयक्तिक माहिती</string>
+    <string name="personal_info_name">पूर्ण नाव</string>
+    <string name="personal_info_dob">जन्मतारीख (पर्यायी)</string>
+    <string name="personal_info_notes">अतिरिक्त टिपा</string>
+    <string name="personal_info_empty">आपत्कालीन प्रतिसादकर्त्यांना मदत करण्यासाठी आपली मूलभूत माहिती जोडा।</string>
+    
+    <!-- Medical Conditions -->
+    <string name="conditions_title">वैद्यकीय स्थिती</string>
+    <string name="conditions_add">स्थिती जोडा</string>
+    <string name="conditions_empty">कोणतीही वैद्यकीय स्थिती नोंदवली नाही।\nकोणतीही स्थिती नोंदवण्यासाठी जोडा वर टॅप करा।</string>
+    <string name="condition_name">स्थितीचे नाव</string>
+    <string name="condition_notes">टिपा</string>
+    <string name="condition_user_provided">वापरकर्त्याने प्रदान केले</string>
+    <string name="condition_verified">सत्यापित</string>
+    
+    <!-- Medications -->
+    <string name="medications_title">सध्याची औषधे</string>
+    <string name="medications_add">औषध जोडा</string>
+    <string name="medications_empty">कोणतीही औषधे नोंदवली नाहीत।\nतुम्ही घेता ती औषधे नोंदवण्यासाठी जोडा वर टॅप करा।</string>
+    <string name="medication_name">औषधाचे नाव</string>
+    <string name="medication_dosage">डोस (पर्यायी)</string>
+    <string name="medication_frequency">वारंवारता (पर्यायी)</string>
+    <string name="medication_notes">टिपा</string>
+    
+    <!-- Allergies -->
+    <string name="allergies_title">ऍलर्जी</string>
+    <string name="allergies_add">ऍलर्जी जोडा</string>
+    <string name="allergies_empty">कोणतीही ऍलर्जी नोंदवली नाही।\nकोणतीही ऍलर्जी नोंदवण्यासाठी जोडा वर टॅप करा।</string>
+    <string name="allergies_none">कोणतीही ज्ञात ऍलर्जी नाही</string>
+    <string name="allergy_name">ऍलर्जी किंवा पदार्थ</string>
+    <string name="allergy_reaction">प्रतिक्रिया (पर्यायी)</string>
+    <string name="allergy_severity">तीव्रता</string>
+    <string name="allergy_severity_mild">सौम्य</string>
+    <string name="allergy_severity_moderate">मध्यम</string>
+    <string name="allergy_severity_severe">गंभीर</string>
+    <string name="allergy_severity_unknown">अज्ञात</string>
+    <string name="allergy_notes">टिपा</string>
+    
+    <!-- Surgeries -->
+    <string name="surgeries_title">मागील शस्त्रक्रिया</string>
+    <string name="surgeries_add">शस्त्रक्रिया जोडा</string>
+    <string name="surgeries_empty">कोणतीही शस्त्रक्रिया नोंदवली नाही।\nकोणतीही मागील शस्त्रक्रिया किंवा प्रक्रिया नोंदवण्यासाठी जोडा वर टॅप करा।</string>
+    <string name="surgery_name">शस्त्रक्रिया किंवा प्रक्रिया</string>
+    <string name="surgery_date">तारीख (पर्यायी)</string>
+    <string name="surgery_notes">टिपा</string>
+    
+    <!-- Emergency Contacts -->
+    <string name="emergency_contacts_title">आपत्कालीन संपर्क</string>
+    <string name="emergency_contacts_add">संपर्क जोडा</string>
+    <string name="emergency_contacts_empty">कोणतेही आपत्कालीन संपर्क जोडलेले नाहीत।\nआपत्कालीन परिस्थितीत सूचित करण्यासाठी कुटुंब किंवा मित्र जोडा।</string>
+    <string name="contact_name">नाव</string>
+    <string name="contact_relationship">नाते</string>
+    <string name="contact_phone">फोन नंबर</string>
+    <string name="contact_notes">टिपा</string>
+    <string name="contact_relationship_daughter">मुलगी</string>
+    <string name="contact_relationship_son">मुलगा</string>
+    <string name="contact_relationship_spouse">जोडीदार</string>
+    <string name="contact_relationship_sibling">भाऊ/बहीण</string>
+    <string name="contact_relationship_friend">मित्र</string>
+    <string name="contact_relationship_neighbor">शेजारी</string>
+    <string name="contact_relationship_caregiver">काळजीवाहक</string>
+    <string name="contact_relationship_other">इतर</string>
+    
+    <!-- Consent -->
+    <string name="consent_title">माहिती सामायिकरण संमती</string>
+    <string name="consent_hospital_label">आपत्कालीन दरम्यान रुग्णालयासोबत वैद्यकीय माहिती सामायिक करा</string>
+    <string name="consent_hospital_description">सक्षम केल्यावर, आपल्या प्रोफाइलमधील संबंधित वैद्यकीय माहिती आपत्कालीन दरम्यान योग्य काळजी प्रदान करण्यासाठी अधिकृत रुग्णालय कर्मचार्यांसह सामायिक केली जाऊ शकते।</string>
+    <string name="consent_caregivers_label">नियुक्त काळजीवाहकांसोबत आपत्कालीन स्थिती सामायिक करा</string>
+    <string name="consent_caregivers_description">सक्षम केल्यावर, आपले आपत्कालीन संपर्क आपल्या आपत्कालीन स्थिती आणि स्थानाविषयी अपडेट प्राप्त करू शकतात।</string>
+    <string name="consent_disclaimer">हा एक प्रोटोटाइप आहे। कोणतेही वास्तविक डेटा सामायिकरण होत नाही। संमती सेटिंग्ज केवळ प्रात्यक्षिक हेतूंसाठी जतन केल्या जातात।</string>
+    <string name="consent_note">तुम्ही या सेटिंग्ज कधीही बदलू शकता।</string>
+    
+    <!-- Actions -->
+    <string name="action_save">जतन करा</string>
+    <string name="action_edit">संपादित करा</string>
+    <string name="action_add">जोडा</string>
+    <string name="action_delete">हटवा</string>
+    <string name="action_done">झाले</string>
+    
+    <!-- Validation -->
+    <string name="validation_required">हे फील्ड आवश्यक आहे</string>
+    <string name="validation_phone_invalid">कृपया वैध फोन नंबर टाका</string>
+    <string name="validation_name_required">नाव आवश्यक आहे</string>
+    
+    <!-- Status -->
+    <string name="status_saved">जतन केले</string>
+    <string name="status_deleted">हटवले</string>
+    <string name="status_empty">पूर्ण नाही</string>
+    <string name="status_completed">पूर्ण</string>
+    <string name="status_items_count">%d आयटम</string>
 </resources>
