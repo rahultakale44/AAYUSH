@@ -12,6 +12,7 @@ import com.aayush.emergency.ui.screens.JourneyScreen
 import com.aayush.emergency.ui.screens.LanguageScreen
 import com.aayush.emergency.ui.screens.ProfileScreen
 import com.aayush.emergency.ui.screens.SymptomCaptureScreen
+import com.aayush.emergency.ui.screens.profile.*
 
 /**
  * Main navigation host for AAYUSH application
@@ -39,6 +40,55 @@ fun AAYUSHNavHost(
         
         composable(Screen.Profile.route) {
             ProfileScreen(
+                onNavigateBack = { navController.popBackStack() },
+                onNavigateToPersonalInfo = { navController.navigate(Screen.ProfilePersonalInfo.route) },
+                onNavigateToConditions = { navController.navigate(Screen.ProfileConditions.route) },
+                onNavigateToMedications = { navController.navigate(Screen.ProfileMedications.route) },
+                onNavigateToAllergies = { navController.navigate(Screen.ProfileAllergies.route) },
+                onNavigateToSurgeries = { navController.navigate(Screen.ProfileSurgeries.route) },
+                onNavigateToContacts = { navController.navigate(Screen.ProfileContacts.route) },
+                onNavigateToConsent = { navController.navigate(Screen.ProfileConsent.route) }
+            )
+        }
+        
+        composable(Screen.ProfilePersonalInfo.route) {
+            PersonalInfoScreen(
+                onNavigateBack = { navController.popBackStack() }
+            )
+        }
+        
+        composable(Screen.ProfileConditions.route) {
+            MedicalConditionsScreen(
+                onNavigateBack = { navController.popBackStack() }
+            )
+        }
+        
+        composable(Screen.ProfileMedications.route) {
+            MedicationsScreen(
+                onNavigateBack = { navController.popBackStack() }
+            )
+        }
+        
+        composable(Screen.ProfileAllergies.route) {
+            AllergiesScreen(
+                onNavigateBack = { navController.popBackStack() }
+            )
+        }
+        
+        composable(Screen.ProfileSurgeries.route) {
+            SurgeriesScreen(
+                onNavigateBack = { navController.popBackStack() }
+            )
+        }
+        
+        composable(Screen.ProfileContacts.route) {
+            EmergencyContactsScreen(
+                onNavigateBack = { navController.popBackStack() }
+            )
+        }
+        
+        composable(Screen.ProfileConsent.route) {
+            ConsentScreen(
                 onNavigateBack = { navController.popBackStack() }
             )
         }

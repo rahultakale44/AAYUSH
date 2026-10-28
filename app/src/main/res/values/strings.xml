@@ -56,4 +56,106 @@
     
     <!-- Prototype Notice -->
     <string name="prototype_notice">Prototype Demo - Simulated Features</string>
+    
+    <!-- Phase 2: Health Profile -->
+    <string name="profile_overview_title">Health Profile</string>
+    <string name="profile_personal_info">Personal Information</string>
+    <string name="profile_conditions">Medical Conditions</string>
+    <string name="profile_medications">Current Medications</string>
+    <string name="profile_allergies">Allergies</string>
+    <string name="profile_surgeries">Past Surgeries</string>
+    <string name="profile_emergency_contacts">Emergency Contacts</string>
+    <string name="profile_consent">Information Sharing Consent</string>
+    
+    <!-- Personal Information -->
+    <string name="personal_info_title">Personal Information</string>
+    <string name="personal_info_name">Full Name</string>
+    <string name="personal_info_dob">Date of Birth (Optional)</string>
+    <string name="personal_info_notes">Additional Notes</string>
+    <string name="personal_info_empty">Add your basic information to help emergency responders.</string>
+    
+    <!-- Medical Conditions -->
+    <string name="conditions_title">Medical Conditions</string>
+    <string name="conditions_add">Add Condition</string>
+    <string name="conditions_empty">No medical conditions recorded.\nTap Add to record any conditions.</string>
+    <string name="condition_name">Condition Name</string>
+    <string name="condition_notes">Notes</string>
+    <string name="condition_user_provided">User-provided</string>
+    <string name="condition_verified">Verified</string>
+    
+    <!-- Medications -->
+    <string name="medications_title">Current Medications</string>
+    <string name="medications_add">Add Medication</string>
+    <string name="medications_empty">No medications recorded.\nTap Add to record medicines you take.</string>
+    <string name="medication_name">Medication Name</string>
+    <string name="medication_dosage">Dosage (Optional)</string>
+    <string name="medication_frequency">Frequency (Optional)</string>
+    <string name="medication_notes">Notes</string>
+    
+    <!-- Allergies -->
+    <string name="allergies_title">Allergies</string>
+    <string name="allergies_add">Add Allergy</string>
+    <string name="allergies_empty">No allergies recorded.\nTap Add to record any allergies.</string>
+    <string name="allergies_none">No Known Allergies</string>
+    <string name="allergy_name">Allergy or Substance</string>
+    <string name="allergy_reaction">Reaction (Optional)</string>
+    <string name="allergy_severity">Severity</string>
+    <string name="allergy_severity_mild">Mild</string>
+    <string name="allergy_severity_moderate">Moderate</string>
+    <string name="allergy_severity_severe">Severe</string>
+    <string name="allergy_severity_unknown">Unknown</string>
+    <string name="allergy_notes">Notes</string>
+    
+    <!-- Surgeries -->
+    <string name="surgeries_title">Past Surgeries</string>
+    <string name="surgeries_add">Add Surgery</string>
+    <string name="surgeries_empty">No surgeries recorded.\nTap Add to record any past surgeries or procedures.</string>
+    <string name="surgery_name">Surgery or Procedure</string>
+    <string name="surgery_date">Date (Optional)</string>
+    <string name="surgery_notes">Notes</string>
+    
+    <!-- Emergency Contacts -->
+    <string name="emergency_contacts_title">Emergency Contacts</string>
+    <string name="emergency_contacts_add">Add Contact</string>
+    <string name="emergency_contacts_empty">No emergency contacts added.\nAdd family or friends to notify during emergencies.</string>
+    <string name="contact_name">Name</string>
+    <string name="contact_relationship">Relationship</string>
+    <string name="contact_phone">Phone Number</string>
+    <string name="contact_notes">Notes</string>
+    <string name="contact_relationship_daughter">Daughter</string>
+    <string name="contact_relationship_son">Son</string>
+    <string name="contact_relationship_spouse">Spouse</string>
+    <string name="contact_relationship_sibling">Sibling</string>
+    <string name="contact_relationship_friend">Friend</string>
+    <string name="contact_relationship_neighbor">Neighbor</string>
+    <string name="contact_relationship_caregiver">Caregiver</string>
+    <string name="contact_relationship_other">Other</string>
+    
+    <!-- Consent -->
+    <string name="consent_title">Information Sharing Consent</string>
+    <string name="consent_hospital_label">Share medical information with receiving hospital during emergency</string>
+    <string name="consent_hospital_description">When enabled, relevant medical information from your profile may be shared with authorized hospital staff during an emergency to provide appropriate care.</string>
+    <string name="consent_caregivers_label">Share emergency status with designated caregivers</string>
+    <string name="consent_caregivers_description">When enabled, your emergency contacts may receive updates about your emergency status and location.</string>
+    <string name="consent_disclaimer">This is a prototype. No actual data sharing occurs. Consent settings are saved for demonstration purposes only.</string>
+    <string name="consent_note">You can change these settings at any time.</string>
+    
+    <!-- Actions -->
+    <string name="action_save">Save</string>
+    <string name="action_edit">Edit</string>
+    <string name="action_add">Add</string>
+    <string name="action_delete">Delete</string>
+    <string name="action_done">Done</string>
+    
+    <!-- Validation -->
+    <string name="validation_required">This field is required</string>
+    <string name="validation_phone_invalid">Please enter a valid phone number</string>
+    <string name="validation_name_required">Name is required</string>
+    
+    <!-- Status -->
+    <string name="status_saved">Saved</string>
+    <string name="status_deleted">Deleted</string>
+    <string name="status_empty">Not completed</string>
+    <string name="status_completed">Completed</string>
+    <string name="status_items_count">%d items</string>
 </resources>
