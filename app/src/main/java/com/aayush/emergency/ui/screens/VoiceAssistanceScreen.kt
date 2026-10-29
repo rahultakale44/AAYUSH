@@ -98,13 +98,31 @@ fun VoiceAssistanceScreen(
     var speechRecognizer: SpeechRecognizer? by remember { mutableStateOf(null) }
     var ttsReady by remember { mutableStateOf(false) }
     
+    // Timeout tracking - CRITICAL for detecting stuck recognition
+    var recognitionStartTime by remember { mutableLongStateOf(0L) }
+    var timeoutJob: kotlinx.coroutines.Job? by remember { mutableStateOf(null) }
+    
     // Callback to handle recognition results - runs on main thread
     val handleRecognitionResult: (String?, String?) -> Unit = { transcript, error ->
         android.util.Log.d(TAG, "handleRecognitionResult called - transcript: $transcript, error: $error")
+        
+        // Cancel timeout since we got a result
+        timeoutJob?.cancel()
+        timeoutJob = null
+        
         if (transcript != null) {
             android.util.Log.i(TAG, "✓ Recognition SUCCESS - Transcript: \"$transcript\"")
             recognizedText = transcript
             flowState = VoiceFlowState.PROCESSING_TRANSCRIPT
+            
+            // Clean up recognizer AFTER state update
+            scope.launch {
+                delay(100) // Brief delay to ensure state update completes
+                speechRecognizer?.destroy()
+                speechRecognizer = null
+                android.util.Log.d(TAG, "SpeechRecognizer destroyed after successful recognition")
+            }
+            
             processTranscriptAndCreateSession(
                 transcript = transcript,
                 viewModel = viewModel,
@@ -116,6 +134,14 @@ fun VoiceAssistanceScreen(
             android.util.Log.e(TAG, "✗ Recognition ERROR: $error")
             errorMessage = error
             flowState = VoiceFlowState.ERROR
+            
+            // Clean up recognizer on error
+            scope.launch {
+                delay(100)
+                speechRecognizer?.destroy()
+                speechRecognizer = null
+                android.util.Log.d(TAG, "SpeechRecognizer destroyed after error")
+            }
         }
     }
     
@@ -140,6 +166,10 @@ fun VoiceAssistanceScreen(
     // Initialize TTS
     LaunchedEffect(Unit) {
         android.util.Log.d(TAG, "=== INITIALIZING VOICE ASSISTANCE ===")
+        android.util.Log.d(TAG, "Device: ${android.os.Build.MANUFACTURER} ${android.os.Build.MODEL}")
+        android.util.Log.d(TAG, "Android: ${android.os.Build.VERSION.RELEASE} (API ${android.os.Build.VERSION.SDK_INT})")
+        android.util.Log.d(TAG, "Language: ${Locale.getDefault()}")
+        
         tts = TextToSpeech(context) { status ->
             android.util.Log.d(TAG, "TTS initialization status: $status")
             if (status == TextToSpeech.SUCCESS) {
@@ -155,6 +185,23 @@ fun VoiceAssistanceScreen(
                         // Greeting complete, start listening
                         android.util.Log.i(TAG, "Greeting complete, starting recognition")
                         flowState = VoiceFlowState.LISTENING
+                        recognitionStartTime = System.currentTimeMillis()
+                        
+                        // Start recognition timeout watchdog (30 seconds)
+                        timeoutJob = scope.launch {
+                            delay(30000) // 30 second timeout
+                            val elapsedTime = System.currentTimeMillis() - recognitionStartTime
+                            android.util.Log.e(TAG, "✗ RECOGNITION TIMEOUT after ${elapsedTime}ms - forcing error state")
+                            
+                            // Force error state if still listening
+                            if (flowState == VoiceFlowState.LISTENING) {
+                                handleRecognitionResult(
+                                    null,
+                                    "Recognition timeout. The speech service did not respond. Please try again."
+                                )
+                            }
+                        }
+                        
                         speechRecognizer = startListening(context, handleRecognitionResult)
                     }
                 } else {
@@ -171,6 +218,23 @@ fun VoiceAssistanceScreen(
                     // Skip greeting, go directly to listening
                     android.util.Log.i(TAG, "Skipping greeting, starting recognition directly")
                     flowState = VoiceFlowState.LISTENING
+                    recognitionStartTime = System.currentTimeMillis()
+                    
+                    // Start recognition timeout watchdog (30 seconds)
+                    timeoutJob = scope.launch {
+                        delay(30000) // 30 second timeout
+                        val elapsedTime = System.currentTimeMillis() - recognitionStartTime
+                        android.util.Log.e(TAG, "✗ RECOGNITION TIMEOUT after ${elapsedTime}ms - forcing error state")
+                        
+                        // Force error state if still listening
+                        if (flowState == VoiceFlowState.LISTENING) {
+                            handleRecognitionResult(
+                                null,
+                                "Recognition timeout. The speech service did not respond. Please try again."
+                            )
+                        }
+                    }
+                    
                     speechRecognizer = startListening(context, handleRecognitionResult)
                 } else {
                     flowState = VoiceFlowState.PERMISSION_REQUIRED
@@ -182,9 +246,13 @@ fun VoiceAssistanceScreen(
     // Cleanup
     DisposableEffect(Unit) {
         onDispose {
+            android.util.Log.d(TAG, "=== DISPOSING VOICE ASSISTANCE SCREEN ===")
+            timeoutJob?.cancel()
             tts?.stop()
             tts?.shutdown()
+            speechRecognizer?.cancel()
             speechRecognizer?.destroy()
+            android.util.Log.d(TAG, "All resources cleaned up")
         }
     }
     
@@ -239,6 +307,24 @@ fun VoiceAssistanceScreen(
                             retryCount++
                             errorMessage = ""
                             flowState = VoiceFlowState.LISTENING
+                            recognitionStartTime = System.currentTimeMillis()
+                            
+                            // Start recognition timeout watchdog (30 seconds)
+                            timeoutJob?.cancel()
+                            timeoutJob = scope.launch {
+                                delay(30000) // 30 second timeout
+                                val elapsedTime = System.currentTimeMillis() - recognitionStartTime
+                                android.util.Log.e(TAG, "✗ RECOGNITION TIMEOUT after ${elapsedTime}ms - forcing error state")
+                                
+                                // Force error state if still listening
+                                if (flowState == VoiceFlowState.LISTENING) {
+                                    handleRecognitionResult(
+                                        null,
+                                        "Recognition timeout. The speech service did not respond. Please try again."
+                                    )
+                                }
+                            }
+                            
                             speechRecognizer = startListening(context, handleRecognitionResult)
                         }
                     },
@@ -339,12 +425,17 @@ private fun startListening(
         putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL, RecognizerIntent.LANGUAGE_MODEL_FREE_FORM)
         putExtra(RecognizerIntent.EXTRA_LANGUAGE, Locale.getDefault())
         putExtra(RecognizerIntent.EXTRA_PARTIAL_RESULTS, true)
-        putExtra(RecognizerIntent.EXTRA_MAX_RESULTS, 1)
+        putExtra(RecognizerIntent.EXTRA_MAX_RESULTS, 3) // Get top 3 matches for better debugging
         putExtra(RecognizerIntent.EXTRA_SPEECH_INPUT_MINIMUM_LENGTH_MILLIS, 15000) // 15 seconds
         putExtra(RecognizerIntent.EXTRA_SPEECH_INPUT_COMPLETE_SILENCE_LENGTH_MILLIS, 2000) // 2 seconds silence
     }
     
-    android.util.Log.d(TAG, "Recognition language: ${Locale.getDefault()}")
+    android.util.Log.d(TAG, "Recognition intent configured:")
+    android.util.Log.d(TAG, "  Language: ${Locale.getDefault()} (${Locale.getDefault().displayName})")
+    android.util.Log.d(TAG, "  Model: FREE_FORM")
+    android.util.Log.d(TAG, "  Partial results: true")
+    android.util.Log.d(TAG, "  Min length: 15000ms")
+    android.util.Log.d(TAG, "  Silence timeout: 2000ms")
     
     var resultReceived = false  // Prevent duplicate callbacks
     
@@ -383,19 +474,19 @@ private fun startListening(
             
             val errorMsg = when (error) {
                 SpeechRecognizer.ERROR_NO_MATCH -> {
-                    android.util.Log.e(TAG, "  ERROR_NO_MATCH (5) - No speech detected")
+                    android.util.Log.e(TAG, "  ERROR_NO_MATCH (5) - No speech detected or no match found")
                     "No speech detected. Please try speaking again."
                 }
                 SpeechRecognizer.ERROR_SPEECH_TIMEOUT -> {
-                    android.util.Log.e(TAG, "  ERROR_SPEECH_TIMEOUT (6) - Timeout")
+                    android.util.Log.e(TAG, "  ERROR_SPEECH_TIMEOUT (6) - No input detected")
                     "No speech heard. Please try again."
                 }
                 SpeechRecognizer.ERROR_NETWORK, SpeechRecognizer.ERROR_NETWORK_TIMEOUT -> {
-                    android.util.Log.e(TAG, "  ERROR_NETWORK ($error) - Network issue")
-                    "Network error. Check your connection and try again."
+                    android.util.Log.e(TAG, "  ERROR_NETWORK ($error) - Network issue (requires internet)")
+                    "Network error. Speech recognition requires internet. Check your connection and try again."
                 }
                 SpeechRecognizer.ERROR_SERVER -> {
-                    android.util.Log.e(TAG, "  ERROR_SERVER (4) - Server unavailable")
+                    android.util.Log.e(TAG, "  ERROR_SERVER (4) - Google speech server unavailable")
                     "Speech service unavailable. Please try again."
                 }
                 SpeechRecognizer.ERROR_AUDIO -> {
@@ -403,15 +494,15 @@ private fun startListening(
                     "Microphone error. Check your device and try again."
                 }
                 SpeechRecognizer.ERROR_INSUFFICIENT_PERMISSIONS -> {
-                    android.util.Log.e(TAG, "  ERROR_INSUFFICIENT_PERMISSIONS (9) - No permission")
+                    android.util.Log.e(TAG, "  ERROR_INSUFFICIENT_PERMISSIONS (9) - Permission denied")
                     "Microphone permission denied."
                 }
                 SpeechRecognizer.ERROR_CLIENT -> {
-                    android.util.Log.e(TAG, "  ERROR_CLIENT (1) - Client error")
+                    android.util.Log.e(TAG, "  ERROR_CLIENT (1) - Client-side error")
                     "Recognition error. Please try again."
                 }
                 SpeechRecognizer.ERROR_RECOGNIZER_BUSY -> {
-                    android.util.Log.e(TAG, "  ERROR_RECOGNIZER_BUSY (8) - Busy")
+                    android.util.Log.e(TAG, "  ERROR_RECOGNIZER_BUSY (8) - Recognizer busy")
                     "Recognition busy. Please try again."
                 }
                 else -> {
@@ -421,7 +512,7 @@ private fun startListening(
             }
             
             android.util.Log.e(TAG, "✗ Calling onResult with error: $errorMsg")
-            speechRecognizer.destroy()
+            // DO NOT destroy here - let callback handle cleanup after state update
             // CRITICAL: Run callback on main thread for Compose state updates
             android.os.Handler(android.os.Looper.getMainLooper()).post {
                 onResult(null, errorMsg)
@@ -432,35 +523,40 @@ private fun startListening(
             android.util.Log.i(TAG, "→ onResults()")
             
             if (resultReceived) {
-                android.util.Log.w(TAG, "  Result already processed, ignoring")
+                android.util.Log.w(TAG, "  Result already processed, ignoring duplicate")
                 return  // Already processed
             }
             resultReceived = true
             
             val matches = results?.getStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION)
-            android.util.Log.i(TAG, "  Matches: $matches")
+            android.util.Log.i(TAG, "  Matches count: ${matches?.size ?: 0}")
+            if (matches != null) {
+                matches.forEachIndexed { index, match ->
+                    android.util.Log.i(TAG, "    [$index]: \"$match\"")
+                }
+            }
             
             if (!matches.isNullOrEmpty()) {
                 val transcript = matches[0].trim()
-                android.util.Log.i(TAG, "  Best match: \"$transcript\"")
+                android.util.Log.i(TAG, "  Best match (trimmed): \"$transcript\" (length=${transcript.length})")
                 
                 if (transcript.isNotBlank()) {
                     android.util.Log.i(TAG, "✓ SUCCESS - Valid transcript received")
-                    speechRecognizer.destroy()
+                    // DO NOT destroy here - let callback handle cleanup after state update
                     // CRITICAL: Run callback on main thread for Compose state updates
                     android.os.Handler(android.os.Looper.getMainLooper()).post {
                         onResult(transcript, null)
                     }
                 } else {
                     android.util.Log.e(TAG, "✗ Empty transcript (whitespace only)")
-                    speechRecognizer.destroy()
+                    // DO NOT destroy here - let callback handle cleanup
                     android.os.Handler(android.os.Looper.getMainLooper()).post {
                         onResult(null, "Empty transcript received. Please speak clearly and try again.")
                     }
                 }
             } else {
                 android.util.Log.e(TAG, "✗ No matches in results bundle")
-                speechRecognizer.destroy()
+                // DO NOT destroy here - let callback handle cleanup
                 android.os.Handler(android.os.Looper.getMainLooper()).post {
                     onResult(null, "No speech recognized. Please try again.")
                 }
@@ -479,8 +575,17 @@ private fun startListening(
         }
     })
     
-    android.util.Log.i(TAG, "Starting listening...")
-    speechRecognizer.startListening(intent)
+    android.util.Log.i(TAG, "Starting listening... (recognizer hash: ${speechRecognizer.hashCode()})")
+    try {
+        speechRecognizer.startListening(intent)
+        android.util.Log.i(TAG, "✓ startListening() called successfully")
+    } catch (e: Exception) {
+        android.util.Log.e(TAG, "✗ EXCEPTION calling startListening(): ${e.message}", e)
+        onResult(null, "Failed to start recognition: ${e.message}")
+        return null
+    }
+    
+    android.util.Log.d(TAG, "Waiting for recognition callbacks...")
     
     return speechRecognizer
 }
