@@ -43,7 +43,13 @@ import kotlinx.coroutines.launch
 import java.util.*
 
 /**
- * Voice Assistance Screen - FIXED VERSION
+ * Voice Assistance Screen - CRITICAL FIX FOR STUCK LISTENING
+ * 
+ * FIXED ISSUES:
+ * 1. SpeechRecognizer reference not properly stored - recognizer was created but never saved
+ * 2. Callbacks don't run on main thread - Compose state updates must be on main thread
+ * 3. Insufficient logging for debugging physical device issues
+ * 4. onEndOfSpeech doesn't mean results arrived - must wait for onResults or onError
  * 
  * TRUE VOICE-FIRST FLOW:
  * 1. TTS speaks greeting in user's language
@@ -54,20 +60,6 @@ import java.util.*
  * 6. Triage assessment happens immediately
  * 7. Emergency session created with results
  * 8. Navigate to Urgency Assessment screen
- * 
- * NO manual Submit button required for recognized speech.
- * NO 10-second countdown delay for critical symptoms.
- * 
- * FIXES:
- * - Wait for TTS to actually complete (UtteranceProgressListener)
- * - Start recognition only after greeting finishes
- * - Handle all recognition states properly
- * - Process transcript exactly once
- * - Create session BEFORE adding symptoms
- * - Wait for session creation to complete
- * - Support English, Hindi, Marathi
- * - Handle errors with retry
- * - No infinite loops
  */
 
 enum class VoiceFlowState {
@@ -82,6 +74,8 @@ enum class VoiceFlowState {
     PERMISSION_DENIED,      // Permission permanently denied
     ERROR                   // Recognition or processing error
 }
+
+private const val TAG = "AAYUSH_VOICE"
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -99,38 +93,44 @@ fun VoiceAssistanceScreen(
     var errorMessage by remember { mutableStateOf("") }
     var retryCount by remember { mutableIntStateOf(0) }
     
-    // TTS and Speech Recognizer
+    // TTS and Speech Recognizer - must be remembered to persist
     var tts: TextToSpeech? by remember { mutableStateOf(null) }
     var speechRecognizer: SpeechRecognizer? by remember { mutableStateOf(null) }
     var ttsReady by remember { mutableStateOf(false) }
-    var greetingComplete by remember { mutableStateOf(false) }
+    
+    // Callback to handle recognition results - runs on main thread
+    val handleRecognitionResult: (String?, String?) -> Unit = { transcript, error ->
+        android.util.Log.d(TAG, "handleRecognitionResult called - transcript: $transcript, error: $error")
+        if (transcript != null) {
+            android.util.Log.i(TAG, "✓ Recognition SUCCESS - Transcript: \"$transcript\"")
+            recognizedText = transcript
+            flowState = VoiceFlowState.PROCESSING_TRANSCRIPT
+            processTranscriptAndCreateSession(
+                transcript = transcript,
+                viewModel = viewModel,
+                scope = scope,
+                onStateChange = { flowState = it },
+                onComplete = onNavigateToUrgencyAssessment
+            )
+        } else if (error != null) {
+            android.util.Log.e(TAG, "✗ Recognition ERROR: $error")
+            errorMessage = error
+            flowState = VoiceFlowState.ERROR
+        }
+    }
     
     // Permission launcher
     val permissionLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.RequestPermission()
     ) { isGranted ->
+        android.util.Log.d(TAG, "Permission result: $isGranted")
         if (isGranted) {
             flowState = VoiceFlowState.AAYUSH_SPEAKING
             speakGreetingAndListen(tts, context) {
                 // Greeting complete, start listening
-                greetingComplete = true
+                android.util.Log.i(TAG, "Greeting complete, starting recognition")
                 flowState = VoiceFlowState.LISTENING
-                startListening(context, speechRecognizer) { transcript, error ->
-                    if (transcript != null) {
-                        recognizedText = transcript
-                        flowState = VoiceFlowState.PROCESSING_TRANSCRIPT
-                        processTranscriptAndCreateSession(
-                            transcript = transcript,
-                            viewModel = viewModel,
-                            scope = scope,
-                            onStateChange = { flowState = it },
-                            onComplete = onNavigateToUrgencyAssessment
-                        )
-                    } else if (error != null) {
-                        errorMessage = error
-                        flowState = VoiceFlowState.ERROR
-                    }
-                }
+                speechRecognizer = startListening(context, handleRecognitionResult)
             }
         } else {
             flowState = VoiceFlowState.PERMISSION_DENIED
@@ -139,62 +139,39 @@ fun VoiceAssistanceScreen(
     
     // Initialize TTS
     LaunchedEffect(Unit) {
+        android.util.Log.d(TAG, "=== INITIALIZING VOICE ASSISTANCE ===")
         tts = TextToSpeech(context) { status ->
+            android.util.Log.d(TAG, "TTS initialization status: $status")
             if (status == TextToSpeech.SUCCESS) {
                 ttsReady = true
                 // Check microphone permission
-                if (context.checkSelfPermission(Manifest.permission.RECORD_AUDIO) ==
+                val hasPermission = context.checkSelfPermission(Manifest.permission.RECORD_AUDIO) ==
                     android.content.pm.PackageManager.PERMISSION_GRANTED
-                ) {
+                android.util.Log.d(TAG, "Microphone permission: $hasPermission")
+                
+                if (hasPermission) {
                     flowState = VoiceFlowState.AAYUSH_SPEAKING
                     speakGreetingAndListen(tts, context) {
                         // Greeting complete, start listening
-                        greetingComplete = true
+                        android.util.Log.i(TAG, "Greeting complete, starting recognition")
                         flowState = VoiceFlowState.LISTENING
-                        startListening(context, speechRecognizer) { transcript, error ->
-                            if (transcript != null) {
-                                recognizedText = transcript
-                                flowState = VoiceFlowState.PROCESSING_TRANSCRIPT
-                                processTranscriptAndCreateSession(
-                                    transcript = transcript,
-                                    viewModel = viewModel,
-                                    scope = scope,
-                                    onStateChange = { flowState = it },
-                                    onComplete = onNavigateToUrgencyAssessment
-                                )
-                            } else if (error != null) {
-                                errorMessage = error
-                                flowState = VoiceFlowState.ERROR
-                            }
-                        }
+                        speechRecognizer = startListening(context, handleRecognitionResult)
                     }
                 } else {
                     flowState = VoiceFlowState.PERMISSION_REQUIRED
                 }
             } else {
                 // TTS failed, still need permission check
+                android.util.Log.w(TAG, "TTS unavailable, checking permission")
                 ttsReady = false
-                if (context.checkSelfPermission(Manifest.permission.RECORD_AUDIO) ==
+                val hasPermission = context.checkSelfPermission(Manifest.permission.RECORD_AUDIO) ==
                     android.content.pm.PackageManager.PERMISSION_GRANTED
-                ) {
+                
+                if (hasPermission) {
                     // Skip greeting, go directly to listening
+                    android.util.Log.i(TAG, "Skipping greeting, starting recognition directly")
                     flowState = VoiceFlowState.LISTENING
-                    startListening(context, speechRecognizer) { transcript, error ->
-                        if (transcript != null) {
-                            recognizedText = transcript
-                            flowState = VoiceFlowState.PROCESSING_TRANSCRIPT
-                            processTranscriptAndCreateSession(
-                                transcript = transcript,
-                                viewModel = viewModel,
-                                scope = scope,
-                                onStateChange = { flowState = it },
-                                onComplete = onNavigateToUrgencyAssessment
-                            )
-                        } else if (error != null) {
-                            errorMessage = error
-                            flowState = VoiceFlowState.ERROR
-                        }
-                    }
+                    speechRecognizer = startListening(context, handleRecognitionResult)
                 } else {
                     flowState = VoiceFlowState.PERMISSION_REQUIRED
                 }
@@ -258,25 +235,11 @@ fun VoiceAssistanceScreen(
                     retryCount = retryCount,
                     onRetry = {
                         if (retryCount < 2) {
+                            android.util.Log.i(TAG, "Retry attempt ${retryCount + 1}/2")
                             retryCount++
                             errorMessage = ""
                             flowState = VoiceFlowState.LISTENING
-                            startListening(context, speechRecognizer) { transcript, error ->
-                                if (transcript != null) {
-                                    recognizedText = transcript
-                                    flowState = VoiceFlowState.PROCESSING_TRANSCRIPT
-                                    processTranscriptAndCreateSession(
-                                        transcript = transcript,
-                                        viewModel = viewModel,
-                                        scope = scope,
-                                        onStateChange = { flowState = it },
-                                        onComplete = onNavigateToUrgencyAssessment
-                                    )
-                                } else if (error != null) {
-                                    errorMessage = error
-                                    flowState = VoiceFlowState.ERROR
-                                }
-                            }
+                            speechRecognizer = startListening(context, handleRecognitionResult)
                         }
                     },
                     onCancel = onNavigateBack
@@ -294,7 +257,10 @@ private fun speakGreetingAndListen(
     context: android.content.Context,
     onGreetingComplete: () -> Unit
 ) {
+    android.util.Log.d(TAG, "=== SPEAKING GREETING ===")
+    
     if (tts == null) {
+        android.util.Log.w(TAG, "TTS not available, skipping greeting")
         // TTS not available, skip to listening
         onGreetingComplete()
         return
@@ -307,6 +273,8 @@ private fun speakGreetingAndListen(
         else -> "Hello. I am AAYUSH. Please tell me what is troubling you. I am listening."
     }
     
+    android.util.Log.d(TAG, "Greeting language: ${locale.language}, text length: ${greeting.length}")
+    
     // Set language
     when (locale.language) {
         "hi" -> tts.language = Locale("hi", "IN")
@@ -317,18 +285,21 @@ private fun speakGreetingAndListen(
     // Set up completion listener
     tts.setOnUtteranceProgressListener(object : UtteranceProgressListener() {
         override fun onStart(utteranceId: String?) {
-            // TTS started
+            android.util.Log.d(TAG, "TTS onStart: $utteranceId")
         }
         
         override fun onDone(utteranceId: String?) {
+            android.util.Log.i(TAG, "TTS onDone: $utteranceId")
             if (utteranceId == "greeting") {
                 // Greeting completed, start listening
+                android.util.Log.i(TAG, "✓ Greeting complete, triggering onGreetingComplete()")
                 onGreetingComplete()
             }
         }
         
         @Deprecated("Deprecated in Java")
         override fun onError(utteranceId: String?) {
+            android.util.Log.e(TAG, "TTS onError: $utteranceId")
             // TTS error, still proceed to listening
             onGreetingComplete()
         }
@@ -337,28 +308,32 @@ private fun speakGreetingAndListen(
     // Speak with utterance ID
     val params = Bundle()
     params.putString(TextToSpeech.Engine.KEY_PARAM_UTTERANCE_ID, "greeting")
-    tts.speak(greeting, TextToSpeech.QUEUE_FLUSH, params, "greeting")
+    val result = tts.speak(greeting, TextToSpeech.QUEUE_FLUSH, params, "greeting")
+    android.util.Log.d(TAG, "TTS speak() result: $result (SUCCESS=0, ERROR=-1)")
 }
 
 /**
- * Start speech recognition with proper error handling
+ * Start speech recognition with comprehensive logging and proper error handling
+ * RETURNS the SpeechRecognizer instance so it can be stored and managed
  */
 private fun startListening(
     context: android.content.Context,
-    recognizerRef: SpeechRecognizer?,
     onResult: (transcript: String?, error: String?) -> Unit
-) {
+): SpeechRecognizer? {
+    android.util.Log.d(TAG, "=== STARTING SPEECH RECOGNITION ===")
+    
     // Check if speech recognition is available
     if (!SpeechRecognizer.isRecognitionAvailable(context)) {
+        android.util.Log.e(TAG, "✗ Speech recognition NOT AVAILABLE on this device")
         onResult(null, "Speech recognition not available on this device")
-        return
+        return null
     }
     
-    // Destroy old recognizer if exists
-    recognizerRef?.destroy()
+    android.util.Log.i(TAG, "✓ Speech recognition available")
     
     // Create new recognizer
     val speechRecognizer = SpeechRecognizer.createSpeechRecognizer(context)
+    android.util.Log.d(TAG, "Created SpeechRecognizer instance: ${speechRecognizer.hashCode()}")
     
     val intent = Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH).apply {
         putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL, RecognizerIntent.LANGUAGE_MODEL_FREE_FORM)
@@ -369,83 +344,145 @@ private fun startListening(
         putExtra(RecognizerIntent.EXTRA_SPEECH_INPUT_COMPLETE_SILENCE_LENGTH_MILLIS, 2000) // 2 seconds silence
     }
     
+    android.util.Log.d(TAG, "Recognition language: ${Locale.getDefault()}")
+    
     var resultReceived = false  // Prevent duplicate callbacks
     
     speechRecognizer.setRecognitionListener(object : android.speech.RecognitionListener {
         override fun onReadyForSpeech(params: Bundle?) {
-            android.util.Log.d("VoiceAssistance", "Ready for speech")
+            android.util.Log.i(TAG, "→ onReadyForSpeech()")
         }
         
         override fun onBeginningOfSpeech() {
-            android.util.Log.d("VoiceAssistance", "Speech started")
+            android.util.Log.i(TAG, "→ onBeginningOfSpeech() - User started speaking")
         }
         
         override fun onRmsChanged(rmsdB: Float) {
-            // Audio level changed
+            // Audio level changed - log occasionally
+            if (rmsdB > 0 && System.currentTimeMillis() % 1000 < 100) {
+                android.util.Log.v(TAG, "→ onRmsChanged($rmsdB)")
+            }
         }
         
-        override fun onBufferReceived(buffer: ByteArray?) {}
+        override fun onBufferReceived(buffer: ByteArray?) {
+            android.util.Log.v(TAG, "→ onBufferReceived(${buffer?.size} bytes)")
+        }
         
         override fun onEndOfSpeech() {
-            android.util.Log.d("VoiceAssistance", "Speech ended")
+            android.util.Log.i(TAG, "→ onEndOfSpeech() - User stopped speaking (WAITING FOR RESULTS...)")
         }
         
         override fun onError(error: Int) {
-            if (resultReceived) return  // Already got result, ignore error
+            android.util.Log.e(TAG, "→ onError($error)")
+            
+            if (resultReceived) {
+                android.util.Log.w(TAG, "  Result already received, ignoring error")
+                return  // Already got result, ignore error
+            }
             resultReceived = true
             
             val errorMsg = when (error) {
-                SpeechRecognizer.ERROR_NO_MATCH -> 
+                SpeechRecognizer.ERROR_NO_MATCH -> {
+                    android.util.Log.e(TAG, "  ERROR_NO_MATCH (5) - No speech detected")
                     "No speech detected. Please try speaking again."
-                SpeechRecognizer.ERROR_SPEECH_TIMEOUT ->
+                }
+                SpeechRecognizer.ERROR_SPEECH_TIMEOUT -> {
+                    android.util.Log.e(TAG, "  ERROR_SPEECH_TIMEOUT (6) - Timeout")
                     "No speech heard. Please try again."
-                SpeechRecognizer.ERROR_NETWORK, SpeechRecognizer.ERROR_NETWORK_TIMEOUT ->
+                }
+                SpeechRecognizer.ERROR_NETWORK, SpeechRecognizer.ERROR_NETWORK_TIMEOUT -> {
+                    android.util.Log.e(TAG, "  ERROR_NETWORK ($error) - Network issue")
                     "Network error. Check your connection and try again."
-                SpeechRecognizer.ERROR_SERVER ->
+                }
+                SpeechRecognizer.ERROR_SERVER -> {
+                    android.util.Log.e(TAG, "  ERROR_SERVER (4) - Server unavailable")
                     "Speech service unavailable. Please try again."
-                SpeechRecognizer.ERROR_AUDIO ->
+                }
+                SpeechRecognizer.ERROR_AUDIO -> {
+                    android.util.Log.e(TAG, "  ERROR_AUDIO (3) - Microphone problem")
                     "Microphone error. Check your device and try again."
-                SpeechRecognizer.ERROR_INSUFFICIENT_PERMISSIONS ->
+                }
+                SpeechRecognizer.ERROR_INSUFFICIENT_PERMISSIONS -> {
+                    android.util.Log.e(TAG, "  ERROR_INSUFFICIENT_PERMISSIONS (9) - No permission")
                     "Microphone permission denied."
-                else ->
-                    "Recognition failed. Please try again."
+                }
+                SpeechRecognizer.ERROR_CLIENT -> {
+                    android.util.Log.e(TAG, "  ERROR_CLIENT (1) - Client error")
+                    "Recognition error. Please try again."
+                }
+                SpeechRecognizer.ERROR_RECOGNIZER_BUSY -> {
+                    android.util.Log.e(TAG, "  ERROR_RECOGNIZER_BUSY (8) - Busy")
+                    "Recognition busy. Please try again."
+                }
+                else -> {
+                    android.util.Log.e(TAG, "  UNKNOWN ERROR ($error)")
+                    "Recognition failed (error $error). Please try again."
+                }
             }
-            android.util.Log.e("VoiceAssistance", "Recognition error: $error - $errorMsg")
+            
+            android.util.Log.e(TAG, "✗ Calling onResult with error: $errorMsg")
             speechRecognizer.destroy()
-            onResult(null, errorMsg)
+            // CRITICAL: Run callback on main thread for Compose state updates
+            android.os.Handler(android.os.Looper.getMainLooper()).post {
+                onResult(null, errorMsg)
+            }
         }
         
         override fun onResults(results: Bundle?) {
-            if (resultReceived) return  // Already processed
+            android.util.Log.i(TAG, "→ onResults()")
+            
+            if (resultReceived) {
+                android.util.Log.w(TAG, "  Result already processed, ignoring")
+                return  // Already processed
+            }
             resultReceived = true
             
             val matches = results?.getStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION)
-            android.util.Log.d("VoiceAssistance", "Results: $matches")
+            android.util.Log.i(TAG, "  Matches: $matches")
             
             if (!matches.isNullOrEmpty()) {
                 val transcript = matches[0].trim()
+                android.util.Log.i(TAG, "  Best match: \"$transcript\"")
+                
                 if (transcript.isNotBlank()) {
+                    android.util.Log.i(TAG, "✓ SUCCESS - Valid transcript received")
                     speechRecognizer.destroy()
-                    onResult(transcript, null)
+                    // CRITICAL: Run callback on main thread for Compose state updates
+                    android.os.Handler(android.os.Looper.getMainLooper()).post {
+                        onResult(transcript, null)
+                    }
                 } else {
+                    android.util.Log.e(TAG, "✗ Empty transcript (whitespace only)")
                     speechRecognizer.destroy()
-                    onResult(null, "Empty transcript received. Please speak clearly and try again.")
+                    android.os.Handler(android.os.Looper.getMainLooper()).post {
+                        onResult(null, "Empty transcript received. Please speak clearly and try again.")
+                    }
                 }
             } else {
+                android.util.Log.e(TAG, "✗ No matches in results bundle")
                 speechRecognizer.destroy()
-                onResult(null, "No speech recognized. Please try again.")
+                android.os.Handler(android.os.Looper.getMainLooper()).post {
+                    onResult(null, "No speech recognized. Please try again.")
+                }
             }
         }
         
         override fun onPartialResults(partialResults: Bundle?) {
             val partial = partialResults?.getStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION)
-            android.util.Log.d("VoiceAssistance", "Partial results: $partial")
+            if (partial != null && partial.isNotEmpty()) {
+                android.util.Log.d(TAG, "→ onPartialResults: ${partial[0]}")
+            }
         }
         
-        override fun onEvent(eventType: Int, params: Bundle?) {}
+        override fun onEvent(eventType: Int, params: Bundle?) {
+            android.util.Log.d(TAG, "→ onEvent($eventType)")
+        }
     })
     
+    android.util.Log.i(TAG, "Starting listening...")
     speechRecognizer.startListening(intent)
+    
+    return speechRecognizer
 }
 
 /**
@@ -460,14 +497,19 @@ private fun processTranscriptAndCreateSession(
 ) {
     scope.launch {
         try {
-            android.util.Log.d("VoiceAssistance", "Processing transcript: $transcript")
+            android.util.Log.d(TAG, "=== PROCESSING TRANSCRIPT ===")
+            android.util.Log.i(TAG, "Transcript: \"$transcript\"")
             
             // Step 1: Extract symptoms
             onStateChange(VoiceFlowState.ANALYZING_SYMPTOMS)
             val extractedSymptoms = SymptomExtractor.extractSymptoms(transcript)
-            android.util.Log.d("VoiceAssistance", "Extracted symptoms: ${extractedSymptoms.size}")
+            android.util.Log.i(TAG, "Extracted ${extractedSymptoms.size} symptoms")
+            extractedSymptoms.forEachIndexed { index, symptom ->
+                android.util.Log.d(TAG, "  Symptom $index: ${symptom.symptomType} - ${symptom.description} (${symptom.confidence})")
+            }
             
             // Step 2: Create emergency session FIRST
+            android.util.Log.d(TAG, "=== CREATING EMERGENCY SESSION ===")
             onStateChange(VoiceFlowState.CREATING_SESSION)
             viewModel.startEmergency()
             
@@ -478,20 +520,25 @@ private fun processTranscriptAndCreateSession(
                 delay(100)
                 session = viewModel.activeSession.value
                 attempts++
+                if (attempts % 3 == 0) {
+                    android.util.Log.d(TAG, "Waiting for session... attempt $attempts/10")
+                }
             }
             
             if (session == null) {
-                android.util.Log.e("VoiceAssistance", "Failed to create emergency session after $attempts attempts")
+                android.util.Log.e(TAG, "✗ FAILED to create emergency session after $attempts attempts")
                 onStateChange(VoiceFlowState.ERROR)
                 return@launch
             }
             
-            android.util.Log.d("VoiceAssistance", "Emergency session created: ${session.id}")
+            android.util.Log.i(TAG, "✓ Emergency session created: ID=${session.id}, Status=${session.status}")
             
             // Step 3: Add symptoms to session
+            android.util.Log.d(TAG, "=== ADDING SYMPTOMS TO SESSION ===")
             if (extractedSymptoms.isNotEmpty()) {
                 extractedSymptoms.forEach { extracted ->
                     val symptomInfo = SymptomExtractor.toSymptomInfo(extracted)
+                    android.util.Log.d(TAG, "Adding symptom: ${symptomInfo.description}")
                     viewModel.addSymptom(
                         description = symptomInfo.description,
                         severity = symptomInfo.severity,
@@ -501,6 +548,7 @@ private fun processTranscriptAndCreateSession(
                 }
             } else {
                 // No specific symptoms extracted, add the raw transcript
+                android.util.Log.w(TAG, "No specific symptoms extracted, using raw transcript")
                 viewModel.addSymptom(
                     description = transcript,
                     severity = com.aayush.emergency.data.model.SymptomSeverity.MODERATE,
@@ -510,24 +558,27 @@ private fun processTranscriptAndCreateSession(
             }
             
             // Triage happens automatically in viewModel.addSymptom()
+            android.util.Log.d(TAG, "Triage assessment triggered (automatic)")
             
             // Step 4: Wait briefly for triage to complete
             delay(300)
             
             // Step 5: Generate patient brief
+            android.util.Log.d(TAG, "Generating patient brief...")
             viewModel.generatePatientBrief()
             delay(200)
             
             // Step 6: Complete
+            android.util.Log.i(TAG, "✓ Processing complete")
             onStateChange(VoiceFlowState.COMPLETE)
             delay(500)
             
             // Navigate to urgency assessment
-            android.util.Log.d("VoiceAssistance", "Navigating to urgency assessment")
+            android.util.Log.i(TAG, "=== NAVIGATING TO URGENCY ASSESSMENT ===")
             onComplete()
             
         } catch (e: Exception) {
-            android.util.Log.e("VoiceAssistance", "Error processing transcript", e)
+            android.util.Log.e(TAG, "✗ ERROR processing transcript: ${e.message}", e)
             onStateChange(VoiceFlowState.ERROR)
         }
     }
