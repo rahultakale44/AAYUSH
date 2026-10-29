@@ -6,6 +6,7 @@ package com.aayush.emergency.data.model
  */
 data class EmergencySession(
     val id: Long = 0L,
+    val patientName: String = "",  // For cross-device identification
     val startTime: Long = 0L,
     val symptoms: List<SymptomInfo> = emptyList(),
     val triageResult: TriageResult? = null,

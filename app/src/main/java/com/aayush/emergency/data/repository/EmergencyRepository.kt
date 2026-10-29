@@ -106,7 +106,10 @@ class EmergencyRepository(private val context: Context) {
         }
     }
     
-    private suspend fun saveActiveSession(session: EmergencySession) {
+    /**
+     * Save active session (public method for updating patient name)
+     */
+    suspend fun saveActiveSession(session: EmergencySession) {
         context.dataStore.edit { preferences ->
             preferences[ACTIVE_SESSION_KEY] = gson.toJson(session)
         }

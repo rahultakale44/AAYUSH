@@ -6,6 +6,7 @@ import androidx.lifecycle.viewModelScope
 import com.aayush.emergency.data.model.*
 import com.aayush.emergency.data.repository.EmergencyRepository
 import com.aayush.emergency.data.repository.ProfileRepository
+import com.aayush.emergency.data.repository.SharedCaseRepository
 import com.aayush.emergency.domain.triage.TriageEngine
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
@@ -17,6 +18,7 @@ class EmergencyViewModel(application: Application) : AndroidViewModel(applicatio
     
     private val emergencyRepository = EmergencyRepository.getInstance(application)
     private val profileRepository = ProfileRepository.getInstance(application)
+    private val sharedRepository = SharedCaseRepository.getInstance(application)
     
     val activeSession: StateFlow<EmergencySession?> = emergencyRepository.activeSession
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), null)
@@ -29,7 +31,16 @@ class EmergencyViewModel(application: Application) : AndroidViewModel(applicatio
      */
     fun startEmergency() {
         viewModelScope.launch {
-            emergencyRepository.startEmergencySession()
+            // Get patient name from health profile if available
+            val healthProfile = profileRepository.healthProfile.first()
+            val patientName = healthProfile?.fullName ?: ""
+            
+            val session = emergencyRepository.startEmergencySession()
+            // Update with patient name
+            if (patientName.isNotEmpty()) {
+                val updated = session.copy(patientName = patientName)
+                emergencyRepository.saveActiveSession(updated)
+            }
         }
     }
     
@@ -64,7 +75,23 @@ class EmergencyViewModel(application: Application) : AndroidViewModel(applicatio
             if (session.symptoms.isEmpty()) return@launch
             
             val triageResult = TriageEngine.assessSymptoms(session.symptoms)
-            emergencyRepository.saveTriageResult(session, triageResult)
+            val triaged = emergencyRepository.saveTriageResult(session, triageResult)
+            
+            // Submit to shared repository for cross-device access
+            submitToSharedRepository(triaged)
+        }
+    }
+    
+    /**
+     * Submit emergency to shared repository for multi-device demo
+     */
+    private fun submitToSharedRepository(session: EmergencySession) {
+        viewModelScope.launch {
+            // Generate patient brief first
+            val brief = generateBrief(session)
+            
+            // Submit to shared repository
+            sharedRepository.submitCase(session, brief)
         }
     }
     
@@ -80,30 +107,33 @@ class EmergencyViewModel(application: Application) : AndroidViewModel(applicatio
                 return@launch
             }
             
-            // Collect profile data
-            val healthProfile = profileRepository.healthProfile.first()
-            val conditions = profileRepository.medicalConditions.first()
-            val medications = profileRepository.medications.first()
-            val allergies = profileRepository.allergies.first()
-            val contacts = profileRepository.emergencyContacts.first()
-            val consent = profileRepository.consentPreferences.first()
-            
-            val consentGiven = consent?.shareWithHospital == true
-            
-            // Generate brief
-            val brief = PatientBrief(
-                generatedAt = System.currentTimeMillis(),
-                emergencySession = session,
-                healthProfile = if (consentGiven) healthProfile else null,
-                relevantConditions = if (consentGiven) conditions else emptyList(),
-                relevantMedications = if (consentGiven) medications else emptyList(),
-                relevantAllergies = if (consentGiven) allergies else emptyList(),
-                emergencyContacts = contacts,  // Contacts always included
-                consentGiven = consentGiven
-            )
-            
+            val brief = generateBrief(session)
             _patientBrief.value = brief
         }
+    }
+    
+    private suspend fun generateBrief(session: EmergencySession): PatientBrief {
+        // Collect profile data
+        val healthProfile = profileRepository.healthProfile.first()
+        val conditions = profileRepository.medicalConditions.first()
+        val medications = profileRepository.medications.first()
+        val allergies = profileRepository.allergies.first()
+        val contacts = profileRepository.emergencyContacts.first()
+        val consent = profileRepository.consentPreferences.first()
+        
+        val consentGiven = consent?.shareWithHospital == true
+        
+        // Generate brief
+        return PatientBrief(
+            generatedAt = System.currentTimeMillis(),
+            emergencySession = session,
+            healthProfile = if (consentGiven) healthProfile else null,
+            relevantConditions = if (consentGiven) conditions else emptyList(),
+            relevantMedications = if (consentGiven) medications else emptyList(),
+            relevantAllergies = if (consentGiven) allergies else emptyList(),
+            emergencyContacts = contacts,  // Contacts always included
+            consentGiven = consentGiven
+        )
     }
     
     /**

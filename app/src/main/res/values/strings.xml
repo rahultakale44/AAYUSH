@@ -221,4 +221,15 @@
     <string name="journey_status_triaged">Triaged</string>
     <string name="journey_status_completed">Completed</string>
     <string name="journey_status_cancelled">Cancelled</string>
+    
+    <!-- Phase 4: Role Selection -->
+    <string name="role_selection_title">Select Your Role</string>
+    <string name="role_selection_subtitle">Three-Device Demo</string>
+    <string name="role_selection_demo_note">Demo mechanism for competition presentation. Not real authentication.</string>
+    <string name="role_senior_title">Senior Citizen</string>
+    <string name="role_senior_description">Use AAYUSH for emergency assistance</string>
+    <string name="role_transport_title">Transport Coordinator</string>
+    <string name="role_transport_description">Manage emergency response and transport</string>
+    <string name="role_hospital_title">Hospital Staff</string>
+    <string name="role_hospital_description">Hospital operations and patient care coordination</string>
 </resources>
