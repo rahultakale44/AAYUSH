@@ -89,7 +89,7 @@ fun AAYUSHNavHost(
                 onNavigateToLanguage = { navController.navigate(Screen.Language.route) },
                 onNavigateToJourney = { navController.navigate(Screen.Journey.route) },
                 onNavigateToEmergency = { navController.navigate(Screen.EmergencyStart.route) },
-                onNavigateToSymptomCapture = { navController.navigate(Screen.SymptomCapture.route) }
+                onNavigateToVoiceAssistance = { navController.navigate(Screen.VoiceAssistance.route) }
             )
         }
         
@@ -188,6 +188,16 @@ fun AAYUSHNavHost(
         composable(Screen.PatientBrief.route) {
             PatientBriefScreen(
                 onNavigateBack = { navController.popBackStack() }
+            )
+        }
+        
+        // Voice Assistance
+        composable(Screen.VoiceAssistance.route) {
+            VoiceAssistanceScreen(
+                onNavigateBack = { navController.popBackStack() },
+                onNavigateToPatientBrief = {
+                    navController.navigate(Screen.PatientBrief.route)
+                }
             )
         }
     }

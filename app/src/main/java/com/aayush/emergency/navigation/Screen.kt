@@ -19,6 +19,7 @@ sealed class Screen(val route: String) {
     data object EmergencyStart : Screen("emergency_start")
     data object SymptomCapture : Screen("symptom_capture")
     data object PatientBrief : Screen("patient_brief")
+    data object VoiceAssistance : Screen("voice_assistance")
     
     // Phase 4: Multi-device demo routes
     data object RoleSelection : Screen("role_selection")

@@ -56,7 +56,7 @@ fun HomeScreen(
     onNavigateToLanguage: () -> Unit,
     onNavigateToJourney: () -> Unit,
     onNavigateToEmergency: () -> Unit,
-    onNavigateToSymptomCapture: () -> Unit
+    onNavigateToVoiceAssistance: () -> Unit
 ) {
     Surface(
         modifier = Modifier.fillMaxSize(),
@@ -82,7 +82,7 @@ fun HomeScreen(
             Spacer(modifier = Modifier.height(20.dp))
             
             // Voice assistance
-            VoiceAssistanceButton(onClick = onNavigateToSymptomCapture)
+            VoiceAssistanceButton(onClick = onNavigateToVoiceAssistance)
             
             Spacer(modifier = Modifier.height(32.dp))
             

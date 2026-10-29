@@ -297,4 +297,39 @@
     <string name="hospital_call_112_recommended">ट्रायेजने 112 कॉलची शिफारस केली</string>
     <string name="hospital_no_consent">रुग्णाने वैद्यकीय माहिती सामायिकरणासाठी अधिकृत केलेले नाही. फक्त आपत्कालीन संपर्क दृश्यमान आहेत.</string>
     <string name="hospital_assign_staff_dialog">कर्मचारी सदस्य नियुक्त करा</string>
+    
+    <!-- Voice Assistance -->
+    <string name="voice_assistance_title">आवाज सहाय्य</string>
+    <string name="voice_greeting_en">Hello! I am your AAYUSH. Please tell me what is troubling you. You can speak naturally.</string>
+    <string name="voice_greeting_hi">नमस्ते! मैं आपका आयुष हूँ। कृपया बताइए कि आपको क्या तकलीफ़ हो रही है।</string>
+    <string name="voice_greeting_mr">नमस्कार! मी तुमचा आयुष आहे. कृपया तुम्हाला काय त्रास होत आहे ते सांगा.</string>
+    <string name="voice_initializing">आवाज सहाय्य तयार करत आहे…</string>
+    <string name="voice_aayush_speaking">आयुष बोलत आहे…</string>
+    <string name="voice_ready_to_listen">ऐकण्यासाठी तयार</string>
+    <string name="voice_listening">ऐकत आहे…</string>
+    <string name="voice_processing">तुमचे भाषण प्रक्रिया करत आहे…</string>
+    <string name="voice_i_heard">मी ऐकले की तुम्ही म्हणाला:</string>
+    <string name="voice_countdown_submitting">%d सेकंदांत सबमिट होत आहे…</string>
+    <string name="voice_cancel_emergency">आपत्कालीन रद्द करा</string>
+    <string name="voice_speak_again">पुन्हा बोला</string>
+    <string name="voice_submit_now">आता सबमिट करा</string>
+    <string name="voice_submitting">तुमची आपत्कालीन सबमिट करत आहे…</string>
+    <string name="voice_cancelled">आपत्कालीन रद्द केले</string>
+    <string name="voice_emergency_submitted">आपत्कालीन यशस्वीरित्या सबमिट केले</string>
+    <string name="voice_tap_to_speak">बोलण्यासाठी मायक्रोफोन टॅप करा</string>
+    <string name="voice_or_type">किंवा खाली तुमची लक्षणे टाइप करा</string>
+    <string name="voice_symptom_hint">तुम्हाला काय वाटत आहे ते वर्णन करा</string>
+    <string name="voice_permission_required">मायक्रोफोन परवानगी आवश्यक</string>
+    <string name="voice_permission_explanation">आयुषला तुमची लक्षणे ऐकण्यासाठी मायक्रोफोन प्रवेश आवश्यक आहे. हे टाइप करण्याऐवजी बोलून आपत्कालीन वर्णन करण्यात मदत करते.</string>
+    <string name="voice_grant_permission">परवानगी द्या</string>
+    <string name="voice_permission_denied">परवानगी नाकारली</string>
+    <string name="voice_permission_denied_message">तुम्ही अजूनही खाली तुमची लक्षणे टाइप करू शकता, किंवा सेटिंग्जमध्ये मायक्रोफोन परवानगी द्या.</string>
+    <string name="voice_go_to_settings">सेटिंग्जवर जा</string>
+    <string name="voice_error_no_speech">मी काहीही ऐकले नाही. कृपया पुन्हा प्रयत्न करा.</string>
+    <string name="voice_error_network">स्पीच रिकग्निशन सेवा अनुपलब्ध. तुमचे कनेक्शन तपासा.</string>
+    <string name="voice_error_service_unavailable">स्पीच रिकग्निशन सेवा या डिव्हाइसवर उपलब्ध नाही.</string>
+    <string name="voice_error_recognition_failed">स्पीच ओळखता आले नाही. कृपया पुन्हा प्रयत्न करा किंवा तुमची लक्षणे टाइप करा.</string>
+    <string name="voice_tts_unavailable">आवाज आउटपुट अनुपलब्ध आहे, परंतु तुम्ही अजूनही बोलू शकता किंवा टाइप करू शकता.</string>
+    <string name="voice_empty_transcript">कोणतीही स्पीच ओळखली गेली नाही. कृपया स्पष्टपणे बोला किंवा खाली टेक्स्ट फील्ड वापरा.</string>
+    <string name="voice_help_text">मायक्रोफोन टॅप करा आणि तुमच्या लक्षणांचे स्पष्ट वर्णन करा. उदाहरण: \"मला छातीत तीव्र वेदना आहेत\" किंवा \"मला चक्कर येत आहे आणि श्वास घेण्यास त्रास होत आहे.\"</string>
 </resources>

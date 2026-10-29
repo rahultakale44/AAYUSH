@@ -5,6 +5,16 @@
     <!-- Phase 4: Network permissions for demo backend server -->
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+    
+    <!-- Voice Assistance: Microphone for speech recognition -->
+    <uses-permission android:name="android.permission.RECORD_AUDIO" />
+    
+    <!-- Queries for checking speech recognition availability -->
+    <queries>
+        <intent>
+            <action android:name="android.speech.RecognitionService" />
+        </intent>
+    </queries>
 
     <application
         android:allowBackup="true"

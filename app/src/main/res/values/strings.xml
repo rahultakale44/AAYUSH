@@ -297,4 +297,39 @@
     <string name="hospital_call_112_recommended">112 call recommended by triage</string>
     <string name="hospital_no_consent">Patient has not authorized medical information sharing. Only emergency contacts are visible.</string>
     <string name="hospital_assign_staff_dialog">Assign Staff Member</string>
+    
+    <!-- Voice Assistance -->
+    <string name="voice_assistance_title">Voice Assistance</string>
+    <string name="voice_greeting_en">Hello! I am your AAYUSH. Please tell me what is troubling you. You can speak naturally.</string>
+    <string name="voice_greeting_hi">नमस्ते! मैं आपका आयुष हूँ। कृपया बताइए कि आपको क्या तकलीफ़ हो रही है।</string>
+    <string name="voice_greeting_mr">नमस्कार! मी तुमचा आयुष आहे. कृपया तुम्हाला काय त्रास होत आहे ते सांगा.</string>
+    <string name="voice_initializing">Preparing voice assistance…</string>
+    <string name="voice_aayush_speaking">AAYUSH is speaking…</string>
+    <string name="voice_ready_to_listen">Ready to listen</string>
+    <string name="voice_listening">Listening…</string>
+    <string name="voice_processing">Processing your speech…</string>
+    <string name="voice_i_heard">I heard you say:</string>
+    <string name="voice_countdown_submitting">Submitting in %d seconds…</string>
+    <string name="voice_cancel_emergency">Cancel Emergency</string>
+    <string name="voice_speak_again">Speak Again</string>
+    <string name="voice_submit_now">Submit Now</string>
+    <string name="voice_submitting">Submitting your emergency…</string>
+    <string name="voice_cancelled">Emergency cancelled</string>
+    <string name="voice_emergency_submitted">Emergency submitted successfully</string>
+    <string name="voice_tap_to_speak">Tap the microphone to speak</string>
+    <string name="voice_or_type">Or type your symptoms below</string>
+    <string name="voice_symptom_hint">Describe what you\'re feeling</string>
+    <string name="voice_permission_required">Microphone Permission Required</string>
+    <string name="voice_permission_explanation">AAYUSH needs microphone access to listen to your symptoms. This helps you describe your emergency by speaking instead of typing.</string>
+    <string name="voice_grant_permission">Grant Permission</string>
+    <string name="voice_permission_denied">Permission Denied</string>
+    <string name="voice_permission_denied_message">You can still type your symptoms below, or grant microphone permission in Settings.</string>
+    <string name="voice_go_to_settings">Go to Settings</string>
+    <string name="voice_error_no_speech">I didn\'t hear anything. Please try again.</string>
+    <string name="voice_error_network">Speech recognition service unavailable. Check your connection.</string>
+    <string name="voice_error_service_unavailable">Speech recognition service is not available on this device.</string>
+    <string name="voice_error_recognition_failed">Could not recognize speech. Please try again or type your symptoms.</string>
+    <string name="voice_tts_unavailable">Voice output is unavailable, but you can still speak or type.</string>
+    <string name="voice_empty_transcript">No speech was recognized. Please speak clearly or use the text field below.</string>
+    <string name="voice_help_text">Tap the microphone and clearly describe your symptoms. For example: \"I have severe chest pain\" or \"I feel dizzy and short of breath.\"</string>
 </resources>
