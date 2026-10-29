@@ -170,6 +170,7 @@ fun AAYUSHNavHost(
                 onNavigateToJourney = { navController.navigate(Screen.Journey.route) },
                 onNavigateToEmergency = { navController.navigate(Screen.EmergencyStart.route) },
                 onNavigateToVoiceAssistance = { navController.navigate(Screen.VoiceAssistance.route) },
+                onNavigateToDiagnostic = { navController.navigate(Screen.DiagnosticVoice.route) },
                 onLogout = {
                     navController.navigate(Screen.RoleSelection.route) {
                         popUpTo(0) { inclusive = true }
@@ -296,6 +297,13 @@ fun AAYUSHNavHost(
                 onNavigateToUrgencyAssessment = {
                     navController.navigate(Screen.UrgencyAssessment.route)
                 }
+            )
+        }
+        
+        // Diagnostic Voice (DEBUG ONLY)
+        composable(Screen.DiagnosticVoice.route) {
+            DiagnosticVoiceScreen(
+                onNavigateBack = { navController.popBackStack() }
             )
         }
     }

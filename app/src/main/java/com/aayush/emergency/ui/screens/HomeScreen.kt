@@ -16,6 +16,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.BugReport
 import androidx.compose.material.icons.filled.ContactEmergency
 import androidx.compose.material.icons.filled.Language
 import androidx.compose.material.icons.filled.LocalHospital
@@ -38,6 +39,7 @@ import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.contentDescription
@@ -62,6 +64,7 @@ fun HomeScreen(
     onNavigateToJourney: () -> Unit,
     onNavigateToEmergency: () -> Unit,
     onNavigateToVoiceAssistance: () -> Unit,
+    onNavigateToDiagnostic: () -> Unit = {},
     onLogout: () -> Unit = {},
     viewModel: AuthViewModel = viewModel()
 ) {
@@ -116,6 +119,11 @@ fun HomeScreen(
             
             // Voice assistance
             VoiceAssistanceButton(onClick = onNavigateToVoiceAssistance)
+            
+            Spacer(modifier = Modifier.height(12.dp))
+            
+            // Diagnostic button (for testing speech recognition)
+            DiagnosticButton(onClick = onNavigateToDiagnostic)
             
             Spacer(modifier = Modifier.height(32.dp))
             
@@ -357,5 +365,33 @@ private fun PrototypeNotice() {
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
         }
+    }
+}
+
+@Composable
+private fun DiagnosticButton(onClick: () -> Unit) {
+    OutlinedButton(
+        onClick = onClick,
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(56.dp),
+        shape = RoundedCornerShape(12.dp),
+        colors = ButtonDefaults.outlinedButtonColors(
+            containerColor = Color(0xFFFF9800).copy(alpha = 0.1f)
+        )
+    ) {
+        Icon(
+            imageVector = Icons.Default.BugReport,
+            contentDescription = null,
+            modifier = Modifier
+                .size(24.dp)
+                .padding(end = 8.dp),
+            tint = Color(0xFFFF9800)
+        )
+        Text(
+            text = "🔧 Voice Diagnostic (Debug)",
+            style = MaterialTheme.typography.titleSmall,
+            color = Color(0xFFFF9800)
+        )
     }
 }

@@ -35,6 +35,7 @@ sealed class Screen(val route: String) {
     data object UrgencyAssessment : Screen("urgency_assessment")
     data object PatientBrief : Screen("patient_brief")
     data object VoiceAssistance : Screen("voice_assistance")
+    data object DiagnosticVoice : Screen("diagnostic_voice")
     
     // Multi-role dashboards
     data object TransportDashboard : Screen("transport_dashboard")
