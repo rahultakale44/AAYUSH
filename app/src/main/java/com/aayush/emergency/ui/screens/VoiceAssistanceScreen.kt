@@ -87,6 +87,7 @@ fun VoiceAssistanceScreen(
     var tts: TextToSpeech? by remember { mutableStateOf(null) }
     var speechRecognizer: SpeechRecognizer? by remember { mutableStateOf(null) }
     var hasSpoken by remember { mutableStateOf(false) }
+    var isSubmitting by remember { mutableStateOf(false) } // Prevent duplicate submissions
     
     // Permission launcher
     val permissionLauncher = rememberLauncherForActivityResult(
@@ -164,15 +165,22 @@ fun VoiceAssistanceScreen(
     
     // Countdown timer effect
     LaunchedEffect(voiceState, countdown) {
-        if (voiceState == VoiceState.REVIEW_COUNTDOWN && countdown > 0) {
+        if (voiceState == VoiceState.REVIEW_COUNTDOWN && countdown > 0 && !isSubmitting) {
             delay(1000)
             countdown--
-        } else if (voiceState == VoiceState.REVIEW_COUNTDOWN && countdown == 0) {
-            // Auto-submit after countdown
+        } else if (voiceState == VoiceState.REVIEW_COUNTDOWN && countdown == 0 && !isSubmitting) {
+            // Auto-submit after countdown - only if not already submitting
+            isSubmitting = true
             submitEmergency(
                 text = recognizedText,
                 viewModel = viewModel,
-                onStateChange = { voiceState = it },
+                scope = scope,
+                onStateChange = { newState -> 
+                    voiceState = newState
+                    if (newState != VoiceState.SUBMITTING) {
+                        isSubmitting = false
+                    }
+                },
                 onNavigateToPatientBrief = onNavigateToPatientBrief
             )
         }
@@ -267,20 +275,31 @@ fun VoiceAssistanceScreen(
                         recognizedText = recognizedText,
                         countdown = countdown,
                         onCancel = {
+                            isSubmitting = false
                             voiceState = VoiceState.CANCELLED
                             recognizedText = ""
                         },
                         onSpeakAgain = {
+                            isSubmitting = false
                             recognizedText = ""
                             voiceState = VoiceState.READY_TO_LISTEN
                         },
                         onSubmitNow = {
-                            submitEmergency(
-                                text = recognizedText,
-                                viewModel = viewModel,
-                                onStateChange = { voiceState = it },
-                                onNavigateToPatientBrief = onNavigateToPatientBrief
-                            )
+                            if (!isSubmitting) {
+                                isSubmitting = true
+                                submitEmergency(
+                                    text = recognizedText,
+                                    viewModel = viewModel,
+                                    scope = scope,
+                                    onStateChange = { newState ->
+                                        voiceState = newState
+                                        if (newState != VoiceState.SUBMITTING) {
+                                            isSubmitting = false
+                                        }
+                                    },
+                                    onNavigateToPatientBrief = onNavigateToPatientBrief
+                                )
+                            }
                         }
                     )
                 }
@@ -366,13 +385,30 @@ private fun speakGreeting(
         else -> tts?.language = Locale.ENGLISH
     }
     
-    tts?.speak(greeting, TextToSpeech.QUEUE_FLUSH, null, "greeting")
+    // Set up utterance completion listener
+    tts?.setOnUtteranceProgressListener(object : android.speech.tts.UtteranceProgressListener() {
+        override fun onStart(utteranceId: String?) {
+            // TTS started speaking
+        }
+        
+        override fun onDone(utteranceId: String?) {
+            if (utteranceId == "greeting") {
+                // Callback on completion
+                onComplete()
+            }
+        }
+        
+        @Deprecated("Deprecated in Java")
+        override fun onError(utteranceId: String?) {
+            // If TTS fails, still proceed
+            onComplete()
+        }
+    })
     
-    // Wait for speech to complete
-    kotlinx.coroutines.GlobalScope.launch {
-        delay(greeting.length * 50L) // Rough estimate
-        onComplete()
-    }
+    // Speak with utterance ID
+    val params = Bundle()
+    params.putString(TextToSpeech.Engine.KEY_PARAM_UTTERANCE_ID, "greeting")
+    tts?.speak(greeting, TextToSpeech.QUEUE_FLUSH, params, "greeting")
 }
 
 // Helper function to start speech recognition
@@ -457,6 +493,7 @@ private fun startSpeechRecognition(
 private fun submitEmergency(
     text: String,
     viewModel: EmergencyViewModel,
+    scope: kotlinx.coroutines.CoroutineScope,
     onStateChange: (VoiceState) -> Unit,
     onNavigateToPatientBrief: () -> Unit
 ) {
@@ -464,29 +501,40 @@ private fun submitEmergency(
     
     onStateChange(VoiceState.SUBMITTING)
     
-    // Start emergency session if not already started
-    val session = viewModel.activeSession.value
-    if (session == null) {
-        viewModel.startEmergency()
-    }
-    
-    // Add symptom with speech-recognized text
-    viewModel.addSymptom(
-        description = text,
-        severity = SymptomSeverity.MODERATE, // Default, will be assessed by triage
-        duration = "",
-        notes = "Voice-reported via speech recognition"
-    )
-    
-    // Generate patient brief
-    viewModel.generatePatientBrief()
-    
-    // Navigate to patient brief
-    kotlinx.coroutines.GlobalScope.launch {
-        delay(1000) // Brief delay for submission
-        onStateChange(VoiceState.SUBMITTED)
-        delay(500)
-        onNavigateToPatientBrief()
+    scope.launch {
+        try {
+            // Start emergency session if not already started
+            val session = viewModel.activeSession.value
+            if (session == null) {
+                viewModel.startEmergency()
+                delay(200) // Allow session to be created
+            }
+            
+            // Add symptom with speech-recognized text
+            viewModel.addSymptom(
+                description = text,
+                severity = SymptomSeverity.MODERATE, // Default, will be assessed by triage
+                duration = "",
+                notes = "Voice-reported via speech recognition"
+            )
+            
+            // Generate patient brief
+            viewModel.generatePatientBrief()
+            
+            // Brief delay for processing
+            delay(800)
+            
+            // Update state to submitted
+            onStateChange(VoiceState.SUBMITTED)
+            
+            // Navigate after a short delay
+            delay(500)
+            onNavigateToPatientBrief()
+        } catch (e: Exception) {
+            // Handle any exceptions gracefully
+            android.util.Log.e("VoiceAssistance", "Error submitting emergency", e)
+            onStateChange(VoiceState.ERROR)
+        }
     }
 }
 
