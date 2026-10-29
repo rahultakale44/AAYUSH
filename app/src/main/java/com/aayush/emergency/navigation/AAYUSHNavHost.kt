@@ -17,17 +17,30 @@ import com.aayush.emergency.ui.screens.profile.*
 fun AAYUSHNavHost(
     navController: NavHostController,
     modifier: Modifier = Modifier,
-    startDestination: String = Screen.RoleSelection.route
+    startDestination: String = Screen.Splash.route
 ) {
     NavHost(
         navController = navController,
         startDestination = startDestination,
         modifier = modifier
     ) {
-        // Phase 4: Role Selection (competition demo entry point)
+        // Phase 1: Splash Screen
+        composable(Screen.Splash.route) {
+            SplashScreen(
+                onSplashComplete = {
+                    navController.navigate(Screen.RoleSelection.route) {
+                        popUpTo(Screen.Splash.route) { inclusive = true }
+                    }
+                }
+            )
+        }
+        
+        // Phase 1: Role Selection (entry point after splash)
         composable(Screen.RoleSelection.route) {
             RoleSelectionScreen(
                 onRoleSelected = { role ->
+                    // For demo: Navigate directly to role-specific screens
+                    // In full implementation, would navigate to role-specific auth
                     when (role.name) {
                         "SENIOR_CITIZEN" -> navController.navigate(Screen.Home.route) {
                             popUpTo(Screen.RoleSelection.route) { inclusive = false }

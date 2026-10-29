@@ -16,21 +16,23 @@ import androidx.compose.ui.platform.LocalView
 import androidx.core.view.WindowCompat
 
 private val LightColorScheme = lightColorScheme(
-    primary = NavyBlue,
-    onPrimary = CardBackground,
-    primaryContainer = NavyBlueLight,
-    onPrimaryContainer = CardBackground,
-    secondary = NavyBlueLight,
-    onSecondary = CardBackground,
+    primary = PrimaryTeal,
+    onPrimary = White,
+    primaryContainer = TealLight,
+    onPrimaryContainer = DeepTeal,
+    secondary = DeepNavy,
+    onSecondary = White,
+    tertiary = DeepTeal,
+    onTertiary = White,
     error = EmergencyRed,
-    onError = CardBackground,
+    onError = White,
     errorContainer = EmergencyRedLight,
     onErrorContainer = EmergencyRedDark,
-    background = LightBackground,
+    background = SoftBackground,
     onBackground = TextPrimary,
     surface = CardBackground,
     onSurface = TextPrimary,
-    surfaceVariant = LightBackground,
+    surfaceVariant = SoftBackground,
     onSurfaceVariant = TextSecondary,
     outline = DividerGray
 )

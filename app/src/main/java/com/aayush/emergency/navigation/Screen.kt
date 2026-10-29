@@ -4,6 +4,20 @@ package com.aayush.emergency.navigation
  * Sealed class representing all navigation destinations in the AAYUSH app
  */
 sealed class Screen(val route: String) {
+    // Phase 1: Onboarding
+    data object Splash : Screen("splash")
+    data object RoleSelection : Screen("role_selection")
+    data object Login : Screen("login/{role}") {
+        fun createRoute(role: String) = "login/$role"
+    }
+    data object SignUp : Screen("signup/{role}") {
+        fun createRoute(role: String) = "signup/$role"
+    }
+    data object ForgotPassword : Screen("forgot_password/{role}") {
+        fun createRoute(role: String) = "forgot_password/$role"
+    }
+    
+    // Senior Citizen screens
     data object Home : Screen("home")
     data object Profile : Screen("profile")
     data object ProfilePersonalInfo : Screen("profile_personal_info")
@@ -21,8 +35,7 @@ sealed class Screen(val route: String) {
     data object PatientBrief : Screen("patient_brief")
     data object VoiceAssistance : Screen("voice_assistance")
     
-    // Phase 4: Multi-device demo routes
-    data object RoleSelection : Screen("role_selection")
+    // Multi-role dashboards
     data object TransportDashboard : Screen("transport_dashboard")
     data object HospitalDashboard : Screen("hospital_dashboard")
     data object HospitalCaseDetail : Screen("hospital_case_detail/{caseId}") {

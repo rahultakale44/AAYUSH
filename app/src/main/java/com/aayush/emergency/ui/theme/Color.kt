@@ -2,25 +2,33 @@ package com.aayush.emergency.ui.theme
 
 import androidx.compose.ui.graphics.Color
 
-// Senior-first healthcare color palette
+// AAYUSH Premium Healthcare Color Palette
 
-// Primary - Deep trustworthy navy
+// Primary - Deep premium navy (as per requirements)
+val DeepNavy = Color(0xFF0B1F3A)
 val NavyBlue = Color(0xFF1A3A52)
 val NavyBlueLight = Color(0xFF2C5571)
 val NavyBlueDark = Color(0xFF0D1F2D)
+
+// Teal accents (as per requirements)
+val PrimaryTeal = Color(0xFF0D9488)
+val DeepTeal = Color(0xFF115E59)
+val TealLight = Color(0xFF5EEAD4)
 
 // Emergency red - used sparingly for SOS and critical alerts
 val EmergencyRed = Color(0xFFD32F2F)
 val EmergencyRedLight = Color(0xFFE57373)
 val EmergencyRedDark = Color(0xFF9A0007)
 
-// Success and status colors
-val SafeGreen = Color(0xFF388E3C)
-val WarningAmber = Color(0xFFF57C00)
+// Status colors
+val SafeGreen = Color(0xFF15803D)
+val WarningAmber = Color(0xFFF59E0B)
+val CriticalRed = Color(0xFFD32F2F)
 
 // Neutral and background colors
-val LightBackground = Color(0xFFF5F7FA)
+val SoftBackground = Color(0xFFF3F7FA)
 val CardBackground = Color(0xFFFFFFFF)
+val White = Color(0xFFFFFFFF)
 val TextPrimary = Color(0xFF1C1C1E)
 val TextSecondary = Color(0xFF636366)
 val DividerGray = Color(0xFFE0E0E0)
