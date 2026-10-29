@@ -19,6 +19,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ContactEmergency
 import androidx.compose.material.icons.filled.Language
 import androidx.compose.material.icons.filled.LocalHospital
+import androidx.compose.material.icons.filled.Logout
 import androidx.compose.material.icons.filled.MedicalServices
 import androidx.compose.material.icons.filled.Mic
 import androidx.compose.material.icons.filled.Person
@@ -28,10 +29,12 @@ import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -42,8 +45,10 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.viewmodel.compose.viewModel
 import com.aayush.emergency.R
 import com.aayush.emergency.ui.theme.EmergencyRed
+import com.aayush.emergency.ui.viewmodel.AuthViewModel
 
 /**
  * Main home screen for AAYUSH
@@ -56,7 +61,9 @@ fun HomeScreen(
     onNavigateToLanguage: () -> Unit,
     onNavigateToJourney: () -> Unit,
     onNavigateToEmergency: () -> Unit,
-    onNavigateToVoiceAssistance: () -> Unit
+    onNavigateToVoiceAssistance: () -> Unit,
+    onLogout: () -> Unit = {},
+    viewModel: AuthViewModel = viewModel()
 ) {
     Surface(
         modifier = Modifier.fillMaxSize(),
@@ -69,7 +76,33 @@ fun HomeScreen(
                 .padding(20.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            Spacer(modifier = Modifier.height(16.dp))
+            Spacer(modifier = Modifier.height(8.dp))
+            
+            // Logout button at top right
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.End
+            ) {
+                TextButton(
+                    onClick = {
+                        viewModel.logout()
+                        onLogout()
+                    }
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Logout,
+                        contentDescription = null,
+                        modifier = Modifier.size(20.dp)
+                    )
+                    Spacer(modifier = Modifier.padding(4.dp))
+                    Text(
+                        text = stringResource(R.string.auth_logout),
+                        style = MaterialTheme.typography.bodyMedium
+                    )
+                }
+            }
+            
+            Spacer(modifier = Modifier.height(8.dp))
             
             // App branding
             AppHeader()

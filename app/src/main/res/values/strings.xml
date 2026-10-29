@@ -50,6 +50,48 @@
     <string name="cd_voice_button">Voice assistance button - Tap to report symptoms by speaking</string>
     <string name="cd_warning_icon">Warning icon</string>
     
+    <!-- Phase 1: Authentication -->
+    <string name="login_title">Login</string>
+    <string name="login_welcome">Welcome Back</string>
+    <string name="login_email_label">Email</string>
+    <string name="login_email_hint">your.email@example.com</string>
+    <string name="login_password_label">Password</string>
+    <string name="login_password_hint">Enter your password</string>
+    <string name="login_forgot_password">Forgot Password?</string>
+    <string name="login_button">Login</string>
+    <string name="login_demo_access">Demo Access (No Password)</string>
+    <string name="login_no_account">Don\'t have an account?</string>
+    <string name="login_sign_up">Sign Up</string>
+    
+    <string name="signup_title">Create Account</string>
+    <string name="signup_subtitle">Register as %s</string>
+    <string name="signup_create_account">Create Your Account</string>
+    <string name="signup_fullname_label">Full Name</string>
+    <string name="signup_fullname_hint">Enter your full name</string>
+    <string name="signup_email_label">Email</string>
+    <string name="signup_email_hint">your.email@example.com</string>
+    <string name="signup_phone_label">Phone (Optional)</string>
+    <string name="signup_phone_hint">Your contact number</string>
+    <string name="signup_password_label">Password</string>
+    <string name="signup_password_hint">At least 6 characters</string>
+    <string name="signup_confirm_password_label">Confirm Password</string>
+    <string name="signup_confirm_password_hint">Re-enter your password</string>
+    <string name="signup_button">Create Account</string>
+    <string name="signup_have_account">Already have an account?</string>
+    <string name="signup_login">Login</string>
+    
+    <string name="forgot_password_title">Reset Password</string>
+    <string name="forgot_password_instruction">Enter your email address and we\'ll help you reset your password.</string>
+    <string name="forgot_password_email_label">Email</string>
+    <string name="forgot_password_email_hint">your.email@example.com</string>
+    <string name="forgot_password_submit">Send Reset Instructions</string>
+    <string name="forgot_password_back_to_login">Back to Login</string>
+    <string name="forgot_password_success_title">Check Your Email</string>
+    <string name="forgot_password_demo_note">DEMO MODE: No actual email is sent. This is a demonstration feature for competition purposes.</string>
+    
+    <string name="auth_demo_disclaimer">Demo Mode: Local authentication only. Not production-secure. For competition demonstration.</string>
+    <string name="auth_logout">Logout</string>
+    
     <!-- Common -->
     <string name="button_continue">Continue</string>
     <string name="button_cancel">Cancel</string>

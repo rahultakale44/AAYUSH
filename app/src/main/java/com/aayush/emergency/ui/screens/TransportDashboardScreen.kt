@@ -23,6 +23,7 @@ import com.aayush.emergency.data.model.*
 import com.aayush.emergency.ui.components.AAYUSHCard
 import com.aayush.emergency.ui.components.ScreenHeader
 import com.aayush.emergency.ui.theme.WarningAmber
+import com.aayush.emergency.ui.viewmodel.AuthViewModel
 import com.aayush.emergency.ui.viewmodel.TransportViewModel
 import java.text.SimpleDateFormat
 import java.util.*
@@ -38,7 +39,8 @@ import java.util.*
 @Composable
 fun TransportDashboardScreen(
     onNavigateBack: () -> Unit,
-    viewModel: TransportViewModel = viewModel()
+    viewModel: TransportViewModel = viewModel(),
+    authViewModel: AuthViewModel = viewModel()
 ) {
     val cases by viewModel.cases.collectAsState()
     val selectedCase by viewModel.selectedCase.collectAsState()
@@ -79,6 +81,14 @@ fun TransportDashboardScreen(
                                     MaterialTheme.colorScheme.error
                                 }
                             )
+                        }
+                        IconButton(
+                            onClick = {
+                                authViewModel.logout()
+                                onNavigateBack()
+                            }
+                        ) {
+                            Icon(Icons.Default.Logout, stringResource(R.string.auth_logout))
                         }
                     }
                 )

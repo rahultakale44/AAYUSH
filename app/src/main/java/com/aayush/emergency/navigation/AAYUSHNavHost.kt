@@ -7,7 +7,9 @@ import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.navArgument
+import com.aayush.emergency.data.model.UserRole
 import com.aayush.emergency.ui.screens.*
+import com.aayush.emergency.ui.screens.auth.*
 import com.aayush.emergency.ui.screens.profile.*
 
 /**
@@ -39,20 +41,85 @@ fun AAYUSHNavHost(
         composable(Screen.RoleSelection.route) {
             RoleSelectionScreen(
                 onRoleSelected = { role ->
-                    // For demo: Navigate directly to role-specific screens
-                    // In full implementation, would navigate to role-specific auth
-                    when (role.name) {
-                        "SENIOR_CITIZEN" -> navController.navigate(Screen.Home.route) {
-                            popUpTo(Screen.RoleSelection.route) { inclusive = false }
-                        }
-                        "TRANSPORT_COORDINATOR" -> navController.navigate(Screen.TransportDashboard.route) {
-                            popUpTo(Screen.RoleSelection.route) { inclusive = false }
-                        }
-                        "HOSPITAL_STAFF" -> navController.navigate(Screen.HospitalDashboard.route) {
-                            popUpTo(Screen.RoleSelection.route) { inclusive = false }
-                        }
+                    // Navigate to role-specific login
+                    navController.navigate(Screen.Login.createRoute(role.name)) {
+                        // Don't pop role selection, allow back navigation
                     }
                 }
+            )
+        }
+        
+        // Phase 1: Login Screen
+        composable(
+            route = Screen.Login.route,
+            arguments = listOf(navArgument("role") { type = NavType.StringType })
+        ) { backStackEntry ->
+            val roleString = backStackEntry.arguments?.getString("role") ?: "SENIOR_CITIZEN"
+            val role = UserRole.valueOf(roleString)
+            
+            LoginScreen(
+                role = role,
+                onNavigateBack = { navController.popBackStack() },
+                onNavigateToSignUp = {
+                    navController.navigate(Screen.SignUp.createRoute(roleString))
+                },
+                onNavigateToForgotPassword = {
+                    navController.navigate(Screen.ForgotPassword.createRoute(roleString))
+                },
+                onLoginSuccess = {
+                    // Navigate to role-specific dashboard
+                    val destination = when (role) {
+                        UserRole.SENIOR_CITIZEN -> Screen.Home.route
+                        UserRole.TRANSPORT_COORDINATOR -> Screen.TransportDashboard.route
+                        UserRole.HOSPITAL_STAFF -> Screen.HospitalDashboard.route
+                    }
+                    navController.navigate(destination) {
+                        // Clear back stack to prevent going back to login
+                        popUpTo(Screen.RoleSelection.route) { inclusive = false }
+                    }
+                }
+            )
+        }
+        
+        // Phase 1: Sign Up Screen
+        composable(
+            route = Screen.SignUp.route,
+            arguments = listOf(navArgument("role") { type = NavType.StringType })
+        ) { backStackEntry ->
+            val roleString = backStackEntry.arguments?.getString("role") ?: "SENIOR_CITIZEN"
+            val role = UserRole.valueOf(roleString)
+            
+            SignUpScreen(
+                role = role,
+                onNavigateBack = { navController.popBackStack() },
+                onNavigateToLogin = { navController.popBackStack() },
+                onSignUpSuccess = {
+                    // Navigate to role-specific dashboard
+                    val destination = when (role) {
+                        UserRole.SENIOR_CITIZEN -> Screen.Home.route
+                        UserRole.TRANSPORT_COORDINATOR -> Screen.TransportDashboard.route
+                        UserRole.HOSPITAL_STAFF -> Screen.HospitalDashboard.route
+                    }
+                    navController.navigate(destination) {
+                        // Clear back stack to prevent going back to signup
+                        popUpTo(Screen.RoleSelection.route) { inclusive = false }
+                    }
+                }
+            )
+        }
+        
+        // Phase 1: Forgot Password Screen
+        composable(
+            route = Screen.ForgotPassword.route,
+            arguments = listOf(navArgument("role") { type = NavType.StringType })
+        ) { backStackEntry ->
+            val roleString = backStackEntry.arguments?.getString("role") ?: "SENIOR_CITIZEN"
+            val role = UserRole.valueOf(roleString)
+            
+            ForgotPasswordScreen(
+                role = role,
+                onNavigateBack = { navController.popBackStack() },
+                onNavigateToLogin = { navController.popBackStack() }
             )
         }
         
@@ -102,7 +169,12 @@ fun AAYUSHNavHost(
                 onNavigateToLanguage = { navController.navigate(Screen.Language.route) },
                 onNavigateToJourney = { navController.navigate(Screen.Journey.route) },
                 onNavigateToEmergency = { navController.navigate(Screen.EmergencyStart.route) },
-                onNavigateToVoiceAssistance = { navController.navigate(Screen.VoiceAssistance.route) }
+                onNavigateToVoiceAssistance = { navController.navigate(Screen.VoiceAssistance.route) },
+                onLogout = {
+                    navController.navigate(Screen.RoleSelection.route) {
+                        popUpTo(0) { inclusive = true }
+                    }
+                }
             )
         }
         

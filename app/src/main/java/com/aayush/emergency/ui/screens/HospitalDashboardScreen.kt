@@ -19,6 +19,7 @@ import com.aayush.emergency.R
 import com.aayush.emergency.data.model.*
 import com.aayush.emergency.ui.components.AAYUSHCard
 import com.aayush.emergency.ui.theme.WarningAmber
+import com.aayush.emergency.ui.viewmodel.AuthViewModel
 import com.aayush.emergency.ui.viewmodel.HospitalViewModel
 import java.text.SimpleDateFormat
 import java.util.*
@@ -34,7 +35,8 @@ import java.util.*
 fun HospitalDashboardScreen(
     onNavigateBack: () -> Unit,
     onNavigateToCaseDetail: (Long) -> Unit,
-    viewModel: HospitalViewModel = viewModel()
+    viewModel: HospitalViewModel = viewModel(),
+    authViewModel: AuthViewModel = viewModel()
 ) {
     val cases by viewModel.cases.collectAsState()
     val isLoading by viewModel.isLoading.collectAsState()
@@ -79,6 +81,14 @@ fun HospitalDashboardScreen(
                                 MaterialTheme.colorScheme.error
                             }
                         )
+                    }
+                    IconButton(
+                        onClick = {
+                            authViewModel.logout()
+                            onNavigateBack()
+                        }
+                    ) {
+                        Icon(Icons.Default.Logout, stringResource(R.string.auth_logout))
                     }
                 }
             )
