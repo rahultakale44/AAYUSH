@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<network-security-config>
+    <!-- 
+        Phase 4: Allow cleartext HTTP for demo backend server
+        PROTOTYPE ONLY - Production apps should use HTTPS
+    -->
+    <base-config cleartextTrafficPermitted="false">
+        <trust-anchors>
+            <certificates src="system" />
+        </trust-anchors>
+    </base-config>
+    
+    <!-- Allow cleartext for local development and demo server -->
+    <domain-config cleartextTrafficPermitted="true">
+        <!-- Emulator localhost -->
+        <domain includeSubdomains="true">10.0.2.2</domain>
+        <!-- Local network range for physical devices -->
+        <domain includeSubdomains="true">192.168.0.0</domain>
+        <domain includeSubdomains="true">192.168.1.0</domain>
+        <!-- Add your laptop's IP address here for demo -->
+        <domain includeSubdomains="true">localhost</domain>
+    </domain-config>
+</network-security-config>

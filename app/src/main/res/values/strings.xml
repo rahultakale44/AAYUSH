@@ -232,4 +232,69 @@
     <string name="role_transport_description">Manage emergency response and transport</string>
     <string name="role_hospital_title">Hospital Staff</string>
     <string name="role_hospital_description">Hospital operations and patient care coordination</string>
+    
+    <!-- Transport Dashboard -->
+    <string name="transport_dashboard_title">Transport Coordinator</string>
+    <string name="transport_simulation_warning">⚠️ SIMULATED TRANSPORT - This does NOT dispatch real ambulances or emergency services</string>
+    <string name="transport_overview">Overview</string>
+    <string name="transport_pending">Pending Requests</string>
+    <string name="transport_en_route">En Route</string>
+    <string name="transport_transporting">Transporting</string>
+    <string name="transport_completed">Completed</string>
+    <string name="transport_cases_title">Emergency Queue</string>
+    <string name="transport_emergency_queue">Emergency Queue</string>
+    <string name="transport_empty_queue">No emergency cases pending</string>
+    <string name="transport_no_cases">No emergency cases pending</string>
+    <string name="transport_case_id">Case ID</string>
+    <string name="transport_patient">Patient</string>
+    <string name="transport_symptoms">Symptoms</string>
+    <string name="transport_urgency">Urgency</string>
+    <string name="transport_status">Transport Status</string>
+    <string name="transport_acknowledge">Acknowledge Request</string>
+    <string name="transport_dispatched">Mark Dispatched</string>
+    <string name="transport_arrived">Arrived at Scene</string>
+    <string name="transport_en_route_hospital">En Route to Hospital</string>
+    <string name="transport_delivered">Delivered to Hospital</string>
+    <string name="transport_view_details">View Details</string>
+    <string name="transport_immediate_case">IMMEDIATE - Critical Case</string>
+    <string name="transport_case_info">Case Information</string>
+    <string name="transport_status_updates">Status Updates</string>
+    <string name="transport_current_status">Current Status</string>
+    <string name="transport_update_status">Update Status</string>
+    
+    <!-- Hospital Dashboard -->
+    <string name="hospital_dashboard_title">Hospital Operations</string>
+    <string name="hospital_overview">Overview</string>
+    <string name="hospital_total_cases">Total Cases</string>
+    <string name="hospital_critical_cases">Critical Cases</string>
+    <string name="hospital_new_cases">New Cases</string>
+    <string name="hospital_active_cases">Active Cases</string>
+    <string name="hospital_pending">Pending</string>
+    <string name="hospital_active">Active Cases</string>
+    <string name="hospital_available_staff">Available Staff</string>
+    <string name="hospital_case_queue">Case Queue</string>
+    <string name="hospital_empty_queue">No cases in queue</string>
+    <string name="hospital_no_cases">No cases in queue</string>
+    <string name="hospital_no_filtered_cases">No cases match the selected filters</string>
+    <string name="hospital_filter_all">All Cases</string>
+    <string name="hospital_filter_immediate">Immediate</string>
+    <string name="hospital_filter_urgent">Urgent</string>
+    <string name="hospital_filter_new">New</string>
+    <string name="hospital_filter_in_progress">In Progress</string>
+    <string name="hospital_unassigned">Unassigned</string>
+    
+    <!-- Hospital Case Detail -->
+    <string name="hospital_emergency_info">Emergency Information</string>
+    <string name="hospital_symptoms_triage">Symptoms &amp; Triage</string>
+    <string name="hospital_triage_assessment">Triage Assessment</string>
+    <string name="hospital_patient_brief">Patient Brief</string>
+    <string name="hospital_assigned_staff">Assigned Staff</string>
+    <string name="hospital_no_staff_assigned">No staff assigned yet</string>
+    <string name="hospital_case_actions">Case Actions</string>
+    <string name="hospital_acknowledge_case">Acknowledge Case</string>
+    <string name="hospital_start_care">Start Care</string>
+    <string name="hospital_complete_case">Mark Complete</string>
+    <string name="hospital_call_112_recommended">112 call recommended by triage</string>
+    <string name="hospital_no_consent">Patient has not authorized medical information sharing. Only emergency contacts are visible.</string>
+    <string name="hospital_assign_staff_dialog">Assign Staff Member</string>
 </resources>

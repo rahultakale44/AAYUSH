@@ -3,8 +3,10 @@ package com.aayush.emergency.navigation
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.navigation.NavHostController
+import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
+import androidx.navigation.navArgument
 import com.aayush.emergency.ui.screens.*
 import com.aayush.emergency.ui.screens.profile.*
 
@@ -14,13 +16,72 @@ import com.aayush.emergency.ui.screens.profile.*
 @Composable
 fun AAYUSHNavHost(
     navController: NavHostController,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    startDestination: String = Screen.RoleSelection.route
 ) {
     NavHost(
         navController = navController,
-        startDestination = Screen.Home.route,
+        startDestination = startDestination,
         modifier = modifier
     ) {
+        // Phase 4: Role Selection (competition demo entry point)
+        composable(Screen.RoleSelection.route) {
+            RoleSelectionScreen(
+                onRoleSelected = { role ->
+                    when (role.name) {
+                        "SENIOR_CITIZEN" -> navController.navigate(Screen.Home.route) {
+                            popUpTo(Screen.RoleSelection.route) { inclusive = false }
+                        }
+                        "TRANSPORT_COORDINATOR" -> navController.navigate(Screen.TransportDashboard.route) {
+                            popUpTo(Screen.RoleSelection.route) { inclusive = false }
+                        }
+                        "HOSPITAL_STAFF" -> navController.navigate(Screen.HospitalDashboard.route) {
+                            popUpTo(Screen.RoleSelection.route) { inclusive = false }
+                        }
+                    }
+                }
+            )
+        }
+        
+        // Phase 4: Transport Coordinator Dashboard
+        composable(Screen.TransportDashboard.route) {
+            TransportDashboardScreen(
+                onNavigateBack = {
+                    navController.navigate(Screen.RoleSelection.route) {
+                        popUpTo(0) { inclusive = true }
+                    }
+                }
+            )
+        }
+        
+        // Phase 4: Hospital Dashboard
+        composable(Screen.HospitalDashboard.route) {
+            HospitalDashboardScreen(
+                onNavigateBack = {
+                    navController.navigate(Screen.RoleSelection.route) {
+                        popUpTo(0) { inclusive = true }
+                    }
+                },
+                onNavigateToCaseDetail = { caseId ->
+                    navController.navigate(Screen.HospitalCaseDetail.createRoute(caseId))
+                }
+            )
+        }
+        
+        // Phase 4: Hospital Case Detail
+        composable(
+            route = Screen.HospitalCaseDetail.route,
+            arguments = listOf(
+                navArgument("caseId") { type = NavType.LongType }
+            )
+        ) { backStackEntry ->
+            val caseId = backStackEntry.arguments?.getLong("caseId") ?: 0L
+            HospitalCaseDetailScreen(
+                caseId = caseId,
+                onNavigateBack = { navController.popBackStack() }
+            )
+        }
+        
         composable(Screen.Home.route) {
             HomeScreen(
                 onNavigateToProfile = { navController.navigate(Screen.Profile.route) },

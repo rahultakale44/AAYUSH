@@ -19,4 +19,12 @@ sealed class Screen(val route: String) {
     data object EmergencyStart : Screen("emergency_start")
     data object SymptomCapture : Screen("symptom_capture")
     data object PatientBrief : Screen("patient_brief")
+    
+    // Phase 4: Multi-device demo routes
+    data object RoleSelection : Screen("role_selection")
+    data object TransportDashboard : Screen("transport_dashboard")
+    data object HospitalDashboard : Screen("hospital_dashboard")
+    data object HospitalCaseDetail : Screen("hospital_case_detail/{caseId}") {
+        fun createRoute(caseId: Long) = "hospital_case_detail/$caseId"
+    }
 }

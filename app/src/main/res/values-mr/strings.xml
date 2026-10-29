@@ -221,4 +221,80 @@
     <string name="journey_status_triaged">ट्रायेज केले</string>
     <string name="journey_status_completed">पूर्ण</string>
     <string name="journey_status_cancelled">रद्द केले</string>
+    
+    <!-- Phase 4: Role Selection -->
+    <string name="role_selection_title">आपली भूमिका निवडा</string>
+    <string name="role_selection_subtitle">तीन-डिव्हाइस डेमो</string>
+    <string name="role_selection_demo_note">स्पर्धा सादरीकरणासाठी डेमो यंत्रणा। खरे प्रमाणीकरण नाही.</string>
+    <string name="role_senior_title">वरिष्ठ नागरिक</string>
+    <string name="role_senior_description">आपत्कालीन सहाय्यासाठी आयुष वापरा</string>
+    <string name="role_transport_title">वाहतूक समन्वयक</string>
+    <string name="role_transport_description">आपत्कालीन प्रतिसाद आणि वाहतूक व्यवस्थापित करा</string>
+    <string name="role_hospital_title">रुग्णालय कर्मचारी</string>
+    <string name="role_hospital_description">रुग्णालय संचालन आणि रुग्ण काळजी समन्वय</string>
+    
+    <!-- Transport Dashboard -->
+    <string name="transport_dashboard_title">वाहतूक समन्वयक</string>
+    <string name="transport_simulation_warning">⚠️ सिम्युलेटेड वाहतूक - हे खरी रुग्णवाहिका किंवा आपत्कालीन सेवा पाठवत नाही</string>
+    <string name="transport_overview">विहंगावलोकन</string>
+    <string name="transport_pending">प्रलंबित विनंत्या</string>
+    <string name="transport_en_route">मार्गात</string>
+    <string name="transport_transporting">वाहतूकीत</string>
+    <string name="transport_completed">पूर्ण</string>
+    <string name="transport_cases_title">आपत्कालीन रांग</string>
+    <string name="transport_emergency_queue">आपत्कालीन रांग</string>
+    <string name="transport_empty_queue">कोणतीही आपत्कालीन प्रकरणे प्रलंबित नाहीत</string>
+    <string name="transport_no_cases">कोणतीही आपत्कालीन प्रकरणे प्रलंबित नाहीत</string>
+    <string name="transport_case_id">प्रकरण आयडी</string>
+    <string name="transport_patient">रुग्ण</string>
+    <string name="transport_symptoms">लक्षणे</string>
+    <string name="transport_urgency">तातडी</string>
+    <string name="transport_status">वाहतूक स्थिती</string>
+    <string name="transport_acknowledge">विनंती स्वीकारा</string>
+    <string name="transport_dispatched">पाठवले म्हणून चिन्हांकित करा</string>
+    <string name="transport_arrived">ठिकाणी पोहोचले</string>
+    <string name="transport_en_route_hospital">रुग्णालयाच्या मार्गावर</string>
+    <string name="transport_delivered">रुग्णालयात पोहोचवले</string>
+    <string name="transport_view_details">तपशील पहा</string>
+    <string name="transport_immediate_case">तात्काळ - गंभीर प्रकरण</string>
+    <string name="transport_case_info">प्रकरण माहिती</string>
+    <string name="transport_status_updates">स्थिती अद्यतने</string>
+    <string name="transport_current_status">सध्याची स्थिती</string>
+    <string name="transport_update_status">स्थिती अद्यतनित करा</string>
+    
+    <!-- Hospital Dashboard -->
+    <string name="hospital_dashboard_title">रुग्णालय संचालन</string>
+    <string name="hospital_overview">विहंगावलोकन</string>
+    <string name="hospital_total_cases">एकूण प्रकरणे</string>
+    <string name="hospital_critical_cases">गंभीर प्रकरणे</string>
+    <string name="hospital_new_cases">नवीन प्रकरणे</string>
+    <string name="hospital_active_cases">सक्रिय प्रकरणे</string>
+    <string name="hospital_pending">प्रलंबित</string>
+    <string name="hospital_active">सक्रिय प्रकरणे</string>
+    <string name="hospital_available_staff">उपलब्ध कर्मचारी</string>
+    <string name="hospital_case_queue">प्रकरण रांग</string>
+    <string name="hospital_empty_queue">रांगेत कोणतीही प्रकरणे नाहीत</string>
+    <string name="hospital_no_cases">रांगेत कोणतीही प्रकरणे नाहीत</string>
+    <string name="hospital_no_filtered_cases">निवडलेल्या फिल्टरशी कोणतीही प्रकरणे जुळत नाहीत</string>
+    <string name="hospital_filter_all">सर्व प्रकरणे</string>
+    <string name="hospital_filter_immediate">तात्काळ</string>
+    <string name="hospital_filter_urgent">तातडीचे</string>
+    <string name="hospital_filter_new">नवीन</string>
+    <string name="hospital_filter_in_progress">प्रगतीपथावर</string>
+    <string name="hospital_unassigned">नियुक्त नाही</string>
+    
+    <!-- Hospital Case Detail -->
+    <string name="hospital_emergency_info">आपत्कालीन माहिती</string>
+    <string name="hospital_symptoms_triage">लक्षणे आणि ट्रायेज</string>
+    <string name="hospital_triage_assessment">ट्रायेज मूल्यांकन</string>
+    <string name="hospital_patient_brief">रुग्ण संक्षिप्त</string>
+    <string name="hospital_assigned_staff">नियुक्त कर्मचारी</string>
+    <string name="hospital_no_staff_assigned">अद्याप कोणतेही कर्मचारी नियुक्त नाहीत</string>
+    <string name="hospital_case_actions">प्रकरण कृती</string>
+    <string name="hospital_acknowledge_case">प्रकरण स्वीकारा</string>
+    <string name="hospital_start_care">काळजी सुरू करा</string>
+    <string name="hospital_complete_case">पूर्ण चिन्हांकित करा</string>
+    <string name="hospital_call_112_recommended">ट्रायेजने 112 कॉलची शिफारस केली</string>
+    <string name="hospital_no_consent">रुग्णाने वैद्यकीय माहिती सामायिकरणासाठी अधिकृत केलेले नाही. फक्त आपत्कालीन संपर्क दृश्यमान आहेत.</string>
+    <string name="hospital_assign_staff_dialog">कर्मचारी सदस्य नियुक्त करा</string>
 </resources>
