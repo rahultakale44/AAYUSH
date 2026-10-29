@@ -158,4 +158,67 @@
     <string name="status_empty">पूर्ण नाही</string>
     <string name="status_completed">पूर्ण</string>
     <string name="status_items_count">%d आयटम</string>
+    
+    <!-- Phase 3: Emergency Workflow -->
+    <!-- Emergency Start -->
+    <string name="emergency_critical_warning">वैद्यकीय आपत्कालीन</string>
+    <string name="emergency_dial_112">जर ही खरी आपत्कालीन परिस्थिती असेल, तर आत्ताच 112 डायल करा</string>
+    <string name="emergency_prototype_details">हे एक प्रोटोटाइप प्रात्यक्षिक साधन आहे. हे आपत्कालीन सेवांशी संपर्क साधत नाही, रुग्णवाहिका पाठवत नाही किंवा रुग्णालयांना डेटा प्रसारित करत नाही. खऱ्या आपत्कालीन परिस्थितीत 112 वर कॉल करण्याची जागा हे घेऊ शकत नाही.</string>
+    <string name="emergency_what_this_does">हे साधन काय करते:</string>
+    <string name="emergency_tool_description">• लक्षणे रेकॉर्ड करण्यात मदत करते\n• नियम-आधारित ट्रायेज वापरून तातडीचे मूल्यांकन करते\n• प्रतिसादकर्त्यांसाठी रुग्ण संक्षिप्त तयार करते\n• आपत्कालीन सत्र स्थानिक पातळीवर ट्रॅक करते\n\nसर्व डेटा तुमच्या डिव्हाइसवर राहतो.</string>
+    <string name="emergency_start_session">आपत्कालीन सत्र सुरू करा</string>
+    <string name="emergency_continue_session">सत्र सुरू ठेवा</string>
+    
+    <!-- Symptom Capture -->
+    <string name="symptom_entry_title">आपली लक्षणे रेकॉर्ड करा</string>
+    <string name="symptom_description">तुम्हाला काय अनुभव येत आहे?</string>
+    <string name="symptom_description_hint">उदाहरण: छातीत दुखणे, श्वास घेण्यास त्रास, तीव्र डोकेदुखी</string>
+    <string name="symptom_severity">हे किती गंभीर आहे?</string>
+    <string name="severity_mild">सौम्य</string>
+    <string name="severity_moderate">मध्यम</string>
+    <string name="severity_severe">गंभीर</string>
+    <string name="symptom_duration">तुम्हाला हे किती काळ झाले आहे?</string>
+    <string name="symptom_duration_hint">उदाहरण: 2 तास, आज सकाळपासून</string>
+    <string name="symptom_notes">अतिरिक्त तपशील</string>
+    <string name="symptom_notes_hint">इतर कोणतीही संबंधित माहिती</string>
+    <string name="symptom_add_button">लक्षण जोडा</string>
+    <string name="symptom_recorded">रेकॉर्ड केलेली लक्षणे</string>
+    
+    <!-- Triage Results -->
+    <string name="triage_call_112_now">⚠️ आत्ताच 112 वर कॉल करा</string>
+    <string name="triage_urgency">तातडीचा स्तर</string>
+    <string name="triage_red_flags">धोक्याची चिन्हे आढळली</string>
+    <string name="triage_view_patient_brief">रुग्ण संक्षिप्त तयार करा</string>
+    
+    <!-- Patient Brief -->
+    <string name="patient_brief_title">रुग्ण संक्षिप्त</string>
+    <string name="patient_brief_disclaimer">ही माहिती स्थानिक पातळीवर तयार केली गेली आहे आणि वापरकर्त्याने प्रदान केली आहे. हे वैद्यकीयदृष्ट्या सत्यापित केलेले नाही किंवा कोणत्याही सेवेला प्रसारित केलेले नाही.</string>
+    <string name="patient_brief_empty">कोणतेही आपत्कालीन सत्र सक्रिय नाही. रुग्ण संक्षिप्त तयार करण्यासाठी आपत्कालीन सत्र सुरू करा.</string>
+    <string name="patient_brief_emergency_info">आपत्कालीन सत्र माहिती</string>
+    <string name="patient_brief_session_started">सुरू केले</string>
+    <string name="patient_brief_status">स्थिती</string>
+    <string name="patient_brief_symptoms">नोंदवलेली लक्षणे</string>
+    <string name="patient_brief_triage">ट्रायेज मूल्यांकन</string>
+    <string name="patient_brief_data_sharing">डेटा सामायिकरण संमती</string>
+    <string name="patient_brief_consent_granted">✓ वैद्यकीय माहिती सामायिकरणासाठी अधिकृत</string>
+    <string name="patient_brief_consent_not_granted">वैद्यकीय माहिती सामायिकरण अधिकृत नाही. फक्त आपत्कालीन संपर्क दाखवले आहेत.</string>
+    <string name="patient_brief_personal_info">वैयक्तिक माहिती</string>
+    
+    <!-- Journey Tracking -->
+    <string name="journey_no_active_session">कोणतेही सक्रिय आपत्कालीन सत्र नाही. तुमच्या प्रवासाचा मागोवा घेण्यासाठी आपत्कालीन सुरू करा.</string>
+    <string name="journey_active_session">सक्रिय आपत्कालीन सत्र</string>
+    <string name="journey_status">स्थिती</string>
+    <string name="journey_started">सत्र सुरू केले</string>
+    <string name="journey_symptoms">लक्षणे</string>
+    <string name="journey_symptoms_recorded">रेकॉर्ड केलेली</string>
+    <string name="journey_triage">ट्रायेज पूर्ण</string>
+    <string name="journey_urgency">तातडी</string>
+    <string name="journey_view_brief">रुग्ण संक्षिप्त पहा</string>
+    <string name="journey_complete">पूर्ण म्हणून चिन्हांकित करा</string>
+    <string name="journey_cancel">सत्र रद्द करा</string>
+    <string name="journey_status_started">सुरू केले</string>
+    <string name="journey_status_symptoms">लक्षणे कॅप्चर केलेली</string>
+    <string name="journey_status_triaged">ट्रायेज केले</string>
+    <string name="journey_status_completed">पूर्ण</string>
+    <string name="journey_status_cancelled">रद्द केले</string>
 </resources>

@@ -5,13 +5,7 @@ import androidx.compose.ui.Modifier
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
-import com.aayush.emergency.ui.screens.ContactsScreen
-import com.aayush.emergency.ui.screens.EmergencyStartScreen
-import com.aayush.emergency.ui.screens.HomeScreen
-import com.aayush.emergency.ui.screens.JourneyScreen
-import com.aayush.emergency.ui.screens.LanguageScreen
-import com.aayush.emergency.ui.screens.ProfileScreen
-import com.aayush.emergency.ui.screens.SymptomCaptureScreen
+import com.aayush.emergency.ui.screens.*
 import com.aayush.emergency.ui.screens.profile.*
 
 /**
@@ -107,19 +101,31 @@ fun AAYUSHNavHost(
         
         composable(Screen.Journey.route) {
             JourneyScreen(
-                onNavigateBack = { navController.popBackStack() }
+                onNavigateBack = { navController.popBackStack() },
+                onViewBrief = {
+                    navController.navigate(Screen.PatientBrief.route)
+                }
             )
         }
         
         composable(Screen.EmergencyStart.route) {
             EmergencyStartScreen(
                 onNavigateBack = { navController.popBackStack() },
-                onContinue = { navController.popBackStack() }
+                onContinue = { navController.navigate(Screen.SymptomCapture.route) }
             )
         }
         
         composable(Screen.SymptomCapture.route) {
             SymptomCaptureScreen(
+                onNavigateBack = { navController.popBackStack() },
+                onViewBrief = {
+                    navController.navigate(Screen.PatientBrief.route)
+                }
+            )
+        }
+        
+        composable(Screen.PatientBrief.route) {
+            PatientBriefScreen(
                 onNavigateBack = { navController.popBackStack() }
             )
         }

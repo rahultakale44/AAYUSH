@@ -158,4 +158,67 @@
     <string name="status_empty">Not completed</string>
     <string name="status_completed">Completed</string>
     <string name="status_items_count">%d items</string>
+    
+    <!-- Phase 3: Emergency Workflow -->
+    <!-- Emergency Start -->
+    <string name="emergency_critical_warning">MEDICAL EMERGENCY</string>
+    <string name="emergency_dial_112">If this is a real emergency, DIAL 112 NOW</string>
+    <string name="emergency_prototype_details">This is a prototype demonstration tool. It does NOT contact emergency services, dispatch ambulances, or transmit data to hospitals. It cannot replace calling 112 in a real emergency.</string>
+    <string name="emergency_what_this_does">What this tool does:</string>
+    <string name="emergency_tool_description">• Help you record symptoms\n• Assess urgency using rule-based triage\n• Prepare a patient brief for responders\n• Track emergency session locally\n\nAll data stays on your device.</string>
+    <string name="emergency_start_session">Start Emergency Session</string>
+    <string name="emergency_continue_session">Continue Session</string>
+    
+    <!-- Symptom Capture -->
+    <string name="symptom_entry_title">Record Your Symptoms</string>
+    <string name="symptom_description">What are you experiencing?</string>
+    <string name="symptom_description_hint">Example: chest pain, difficulty breathing, severe headache</string>
+    <string name="symptom_severity">How severe is it?</string>
+    <string name="severity_mild">Mild</string>
+    <string name="severity_moderate">Moderate</string>
+    <string name="severity_severe">Severe</string>
+    <string name="symptom_duration">How long have you had this?</string>
+    <string name="symptom_duration_hint">Example: 2 hours, since this morning</string>
+    <string name="symptom_notes">Additional details</string>
+    <string name="symptom_notes_hint">Any other relevant information</string>
+    <string name="symptom_add_button">Add Symptom</string>
+    <string name="symptom_recorded">Recorded Symptoms</string>
+    
+    <!-- Triage Results -->
+    <string name="triage_call_112_now">⚠️ CALL 112 IMMEDIATELY</string>
+    <string name="triage_urgency">Urgency Level</string>
+    <string name="triage_red_flags">Red Flags Detected</string>
+    <string name="triage_view_patient_brief">Generate Patient Brief</string>
+    
+    <!-- Patient Brief -->
+    <string name="patient_brief_title">Patient Brief</string>
+    <string name="patient_brief_disclaimer">This information is locally generated and user-provided. It has not been clinically verified or transmitted to any service.</string>
+    <string name="patient_brief_empty">No emergency session active. Start an emergency session to generate a patient brief.</string>
+    <string name="patient_brief_emergency_info">Emergency Session Information</string>
+    <string name="patient_brief_session_started">Started</string>
+    <string name="patient_brief_status">Status</string>
+    <string name="patient_brief_symptoms">Reported Symptoms</string>
+    <string name="patient_brief_triage">Triage Assessment</string>
+    <string name="patient_brief_data_sharing">Data Sharing Consent</string>
+    <string name="patient_brief_consent_granted">✓ Medical information sharing authorized</string>
+    <string name="patient_brief_consent_not_granted">Medical information sharing not authorized. Only emergency contacts are shown.</string>
+    <string name="patient_brief_personal_info">Personal Information</string>
+    
+    <!-- Journey Tracking -->
+    <string name="journey_no_active_session">No active emergency session. Start an emergency to track your journey.</string>
+    <string name="journey_active_session">Active Emergency Session</string>
+    <string name="journey_status">Status</string>
+    <string name="journey_started">Session Started</string>
+    <string name="journey_symptoms">Symptoms</string>
+    <string name="journey_symptoms_recorded">recorded</string>
+    <string name="journey_triage">Triage Completed</string>
+    <string name="journey_urgency">Urgency</string>
+    <string name="journey_view_brief">View Patient Brief</string>
+    <string name="journey_complete">Mark as Complete</string>
+    <string name="journey_cancel">Cancel Session</string>
+    <string name="journey_status_started">Started</string>
+    <string name="journey_status_symptoms">Symptoms Captured</string>
+    <string name="journey_status_triaged">Triaged</string>
+    <string name="journey_status_completed">Completed</string>
+    <string name="journey_status_cancelled">Cancelled</string>
 </resources>
