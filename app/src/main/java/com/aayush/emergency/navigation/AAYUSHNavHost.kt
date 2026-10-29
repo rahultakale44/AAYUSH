@@ -279,12 +279,22 @@ fun AAYUSHNavHost(
             )
         }
         
+        // Urgency Assessment
+        composable(Screen.UrgencyAssessment.route) {
+            UrgencyAssessmentScreen(
+                onNavigateToPatientBrief = {
+                    navController.navigate(Screen.PatientBrief.route)
+                },
+                onNavigateBack = { navController.popBackStack() }
+            )
+        }
+        
         // Voice Assistance
         composable(Screen.VoiceAssistance.route) {
             VoiceAssistanceScreen(
                 onNavigateBack = { navController.popBackStack() },
-                onNavigateToPatientBrief = {
-                    navController.navigate(Screen.PatientBrief.route)
+                onNavigateToUrgencyAssessment = {
+                    navController.navigate(Screen.UrgencyAssessment.route)
                 }
             )
         }

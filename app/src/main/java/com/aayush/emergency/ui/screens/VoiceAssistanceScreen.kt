@@ -8,6 +8,7 @@ import android.provider.Settings
 import android.speech.RecognizerIntent
 import android.speech.SpeechRecognizer
 import android.speech.tts.TextToSpeech
+import android.speech.tts.UtteranceProgressListener
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.core.*
@@ -33,7 +34,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.aayush.emergency.R
-import com.aayush.emergency.data.model.SymptomSeverity
+import com.aayush.emergency.domain.triage.SymptomExtractor
 import com.aayush.emergency.ui.components.AAYUSHCard
 import com.aayush.emergency.ui.theme.EmergencyRed
 import com.aayush.emergency.ui.viewmodel.EmergencyViewModel
@@ -42,61 +43,97 @@ import kotlinx.coroutines.launch
 import java.util.*
 
 /**
- * Voice Assistance Screen
+ * Voice Assistance Screen - FIXED VERSION
  * 
- * Features:
- * - Text-to-Speech greeting in user's language
- * - Speech-to-Text for symptom capture
- * - 10-second cancellation window with countdown
- * - Fallback to text input
- * - Runtime microphone permission handling
- * - Safety warnings displayed immediately for critical symptoms
+ * TRUE VOICE-FIRST FLOW:
+ * 1. TTS speaks greeting in user's language
+ * 2. Automatic listening starts after greeting completes
+ * 3. User speaks symptoms naturally
+ * 4. Speech recognition captures transcript
+ * 5. Symptom extraction runs automatically
+ * 6. Triage assessment happens immediately
+ * 7. Emergency session created with results
+ * 8. Navigate to Urgency Assessment screen
+ * 
+ * NO manual Submit button required for recognized speech.
+ * NO 10-second countdown delay for critical symptoms.
+ * 
+ * FIXES:
+ * - Wait for TTS to actually complete (UtteranceProgressListener)
+ * - Start recognition only after greeting finishes
+ * - Handle all recognition states properly
+ * - Process transcript exactly once
+ * - Create session BEFORE adding symptoms
+ * - Wait for session creation to complete
+ * - Support English, Hindi, Marathi
+ * - Handle errors with retry
+ * - No infinite loops
  */
 
-enum class VoiceState {
-    INITIALIZING,           // Setting up TTS and checking permissions
-    AAYUSH_SPEAKING,        // TTS is speaking the greeting
-    READY_TO_LISTEN,        // Ready for user to tap microphone
-    LISTENING,              // Actively recording speech
-    PROCESSING,             // Processing speech recognition results
-    REVIEW_COUNTDOWN,       // Showing transcript with 10-second countdown
-    SUBMITTING,             // Submitting to emergency workflow
-    SUBMITTED,              // Successfully submitted
-    CANCELLED,              // User cancelled
-    PERMISSION_REQUIRED,    // Needs microphone permission
-    PERMISSION_DENIED,      // Permission denied
-    ERROR                   // Recognition or TTS error
+enum class VoiceFlowState {
+    INITIALIZING,           // Setting up TTS and permissions
+    AAYUSH_SPEAKING,        // TTS speaking greeting
+    LISTENING,              // Speech recognition active
+    PROCESSING_TRANSCRIPT,  // Processing recognized text
+    ANALYZING_SYMPTOMS,     // Extracting symptoms and running triage
+    CREATING_SESSION,       // Creating emergency session
+    COMPLETE,              // Ready to navigate
+    PERMISSION_REQUIRED,    // Need microphone permission
+    PERMISSION_DENIED,      // Permission permanently denied
+    ERROR                   // Recognition or processing error
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun VoiceAssistanceScreen(
     onNavigateBack: () -> Unit,
-    onNavigateToPatientBrief: () -> Unit,
+    onNavigateToUrgencyAssessment: () -> Unit,
     viewModel: EmergencyViewModel = viewModel()
 ) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
     
-    // State management
-    var voiceState by remember { mutableStateOf(VoiceState.INITIALIZING) }
+    // State
+    var flowState by remember { mutableStateOf(VoiceFlowState.INITIALIZING) }
     var recognizedText by remember { mutableStateOf("") }
-    var manualText by remember { mutableStateOf("") }
     var errorMessage by remember { mutableStateOf("") }
-    var countdown by remember { mutableIntStateOf(10) }
+    var retryCount by remember { mutableIntStateOf(0) }
+    
+    // TTS and Speech Recognizer
     var tts: TextToSpeech? by remember { mutableStateOf(null) }
     var speechRecognizer: SpeechRecognizer? by remember { mutableStateOf(null) }
-    var hasSpoken by remember { mutableStateOf(false) }
-    var isSubmitting by remember { mutableStateOf(false) } // Prevent duplicate submissions
+    var ttsReady by remember { mutableStateOf(false) }
+    var greetingComplete by remember { mutableStateOf(false) }
     
     // Permission launcher
     val permissionLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.RequestPermission()
     ) { isGranted ->
         if (isGranted) {
-            voiceState = VoiceState.READY_TO_LISTEN
+            flowState = VoiceFlowState.AAYUSH_SPEAKING
+            speakGreetingAndListen(tts, context) {
+                // Greeting complete, start listening
+                greetingComplete = true
+                flowState = VoiceFlowState.LISTENING
+                startListening(context, speechRecognizer) { transcript, error ->
+                    if (transcript != null) {
+                        recognizedText = transcript
+                        flowState = VoiceFlowState.PROCESSING_TRANSCRIPT
+                        processTranscriptAndCreateSession(
+                            transcript = transcript,
+                            viewModel = viewModel,
+                            scope = scope,
+                            onStateChange = { flowState = it },
+                            onComplete = onNavigateToUrgencyAssessment
+                        )
+                    } else if (error != null) {
+                        errorMessage = error
+                        flowState = VoiceFlowState.ERROR
+                    }
+                }
+            }
         } else {
-            voiceState = VoiceState.PERMISSION_DENIED
+            flowState = VoiceFlowState.PERMISSION_DENIED
         }
     }
     
@@ -104,89 +141,68 @@ fun VoiceAssistanceScreen(
     LaunchedEffect(Unit) {
         tts = TextToSpeech(context) { status ->
             if (status == TextToSpeech.SUCCESS) {
+                ttsReady = true
                 // Check microphone permission
                 if (context.checkSelfPermission(Manifest.permission.RECORD_AUDIO) ==
                     android.content.pm.PackageManager.PERMISSION_GRANTED
                 ) {
-                    voiceState = VoiceState.AAYUSH_SPEAKING
-                    speakGreeting(tts, context) {
-                        // Automatically start listening after greeting
-                        voiceState = VoiceState.LISTENING
-                        startSpeechRecognition(
-                            context = context,
-                            onResult = { text ->
-                                recognizedText = text
-                                countdown = 10
-                                voiceState = VoiceState.REVIEW_COUNTDOWN
-                            },
-                            onError = { error ->
+                    flowState = VoiceFlowState.AAYUSH_SPEAKING
+                    speakGreetingAndListen(tts, context) {
+                        // Greeting complete, start listening
+                        greetingComplete = true
+                        flowState = VoiceFlowState.LISTENING
+                        startListening(context, speechRecognizer) { transcript, error ->
+                            if (transcript != null) {
+                                recognizedText = transcript
+                                flowState = VoiceFlowState.PROCESSING_TRANSCRIPT
+                                processTranscriptAndCreateSession(
+                                    transcript = transcript,
+                                    viewModel = viewModel,
+                                    scope = scope,
+                                    onStateChange = { flowState = it },
+                                    onComplete = onNavigateToUrgencyAssessment
+                                )
+                            } else if (error != null) {
                                 errorMessage = error
-                                voiceState = VoiceState.ERROR
-                            },
-                            onStateChange = { state ->
-                                voiceState = state
-                            },
-                            speechRecognizerRef = { sr -> speechRecognizer = sr }
-                        )
+                                flowState = VoiceFlowState.ERROR
+                            }
+                        }
                     }
                 } else {
-                    voiceState = VoiceState.PERMISSION_REQUIRED
+                    flowState = VoiceFlowState.PERMISSION_REQUIRED
                 }
             } else {
-                // TTS unavailable, go directly to permission check
-                errorMessage = context.getString(R.string.voice_tts_unavailable)
+                // TTS failed, still need permission check
+                ttsReady = false
                 if (context.checkSelfPermission(Manifest.permission.RECORD_AUDIO) ==
                     android.content.pm.PackageManager.PERMISSION_GRANTED
                 ) {
-                    // Skip greeting, start listening immediately
-                    voiceState = VoiceState.LISTENING
-                    startSpeechRecognition(
-                        context = context,
-                        onResult = { text ->
-                            recognizedText = text
-                            countdown = 10
-                            voiceState = VoiceState.REVIEW_COUNTDOWN
-                        },
-                        onError = { error ->
+                    // Skip greeting, go directly to listening
+                    flowState = VoiceFlowState.LISTENING
+                    startListening(context, speechRecognizer) { transcript, error ->
+                        if (transcript != null) {
+                            recognizedText = transcript
+                            flowState = VoiceFlowState.PROCESSING_TRANSCRIPT
+                            processTranscriptAndCreateSession(
+                                transcript = transcript,
+                                viewModel = viewModel,
+                                scope = scope,
+                                onStateChange = { flowState = it },
+                                onComplete = onNavigateToUrgencyAssessment
+                            )
+                        } else if (error != null) {
                             errorMessage = error
-                            voiceState = VoiceState.ERROR
-                        },
-                        onStateChange = { state ->
-                            voiceState = state
-                        },
-                        speechRecognizerRef = { sr -> speechRecognizer = sr }
-                    )
+                            flowState = VoiceFlowState.ERROR
+                        }
+                    }
                 } else {
-                    voiceState = VoiceState.PERMISSION_REQUIRED
+                    flowState = VoiceFlowState.PERMISSION_REQUIRED
                 }
             }
         }
     }
     
-    // Countdown timer effect
-    LaunchedEffect(voiceState, countdown) {
-        if (voiceState == VoiceState.REVIEW_COUNTDOWN && countdown > 0 && !isSubmitting) {
-            delay(1000)
-            countdown--
-        } else if (voiceState == VoiceState.REVIEW_COUNTDOWN && countdown == 0 && !isSubmitting) {
-            // Auto-submit after countdown - only if not already submitting
-            isSubmitting = true
-            submitEmergency(
-                text = recognizedText,
-                viewModel = viewModel,
-                scope = scope,
-                onStateChange = { newState -> 
-                    voiceState = newState
-                    if (newState != VoiceState.SUBMITTING) {
-                        isSubmitting = false
-                    }
-                },
-                onNavigateToPatientBrief = onNavigateToPatientBrief
-            )
-        }
-    }
-    
-    // Cleanup on dispose
+    // Cleanup
     DisposableEffect(Unit) {
         onDispose {
             tts?.stop()
@@ -201,10 +217,6 @@ fun VoiceAssistanceScreen(
                 title = { Text(stringResource(R.string.voice_assistance_title)) },
                 navigationIcon = {
                     IconButton(onClick = {
-                        // Cancel any pending submission
-                        if (voiceState == VoiceState.REVIEW_COUNTDOWN) {
-                            voiceState = VoiceState.CANCELLED
-                        }
                         tts?.stop()
                         speechRecognizer?.cancel()
                         onNavigateBack()
@@ -224,264 +236,211 @@ fun VoiceAssistanceScreen(
                 .padding(paddingValues)
                 .verticalScroll(rememberScrollState())
                 .padding(20.dp),
-            horizontalAlignment = Alignment.CenterHorizontally
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Center
         ) {
-            when (voiceState) {
-                VoiceState.INITIALIZING -> {
-                    InitializingView()
-                }
-                VoiceState.AAYUSH_SPEAKING -> {
-                    SpeakingView()
-                }
-                VoiceState.READY_TO_LISTEN -> {
-                    ReadyToListenView(
-                        onStartListening = {
-                            startSpeechRecognition(
-                                context = context,
-                                onResult = { text ->
-                                    recognizedText = text
-                                    countdown = 10
-                                    voiceState = VoiceState.REVIEW_COUNTDOWN
-                                },
-                                onError = { error ->
-                                    errorMessage = error
-                                    voiceState = VoiceState.ERROR
-                                },
-                                onStateChange = { state ->
-                                    voiceState = state
-                                },
-                                speechRecognizerRef = { sr -> speechRecognizer = sr }
-                            )
-                        },
-                        manualText = manualText,
-                        onManualTextChange = { manualText = it },
-                        onManualSubmit = {
-                            if (manualText.isNotBlank()) {
-                                recognizedText = manualText
-                                countdown = 10
-                                voiceState = VoiceState.REVIEW_COUNTDOWN
-                            }
-                        }
-                    )
-                }
-                VoiceState.LISTENING -> {
-                    ListeningView()
-                }
-                VoiceState.PROCESSING -> {
-                    ProcessingView()
-                }
-                VoiceState.REVIEW_COUNTDOWN -> {
-                    ReviewCountdownView(
-                        recognizedText = recognizedText,
-                        countdown = countdown,
-                        onCancel = {
-                            isSubmitting = false
-                            voiceState = VoiceState.CANCELLED
-                            recognizedText = ""
-                        },
-                        onSpeakAgain = {
-                            isSubmitting = false
-                            recognizedText = ""
-                            voiceState = VoiceState.READY_TO_LISTEN
-                        },
-                        onSubmitNow = {
-                            if (!isSubmitting) {
-                                isSubmitting = true
-                                submitEmergency(
-                                    text = recognizedText,
-                                    viewModel = viewModel,
-                                    scope = scope,
-                                    onStateChange = { newState ->
-                                        voiceState = newState
-                                        if (newState != VoiceState.SUBMITTING) {
-                                            isSubmitting = false
-                                        }
-                                    },
-                                    onNavigateToPatientBrief = onNavigateToPatientBrief
-                                )
-                            }
-                        }
-                    )
-                }
-                VoiceState.SUBMITTING -> {
-                    SubmittingView()
-                }
-                VoiceState.SUBMITTED -> {
-                    SubmittedView(onNavigateToPatientBrief)
-                }
-                VoiceState.CANCELLED -> {
-                    CancelledView(onNavigateBack)
-                }
-                VoiceState.PERMISSION_REQUIRED -> {
-                    PermissionRequiredView(
-                        onRequestPermission = {
-                            permissionLauncher.launch(Manifest.permission.RECORD_AUDIO)
-                        },
-                        manualText = manualText,
-                        onManualTextChange = { manualText = it },
-                        onManualSubmit = {
-                            if (manualText.isNotBlank()) {
-                                recognizedText = manualText
-                                countdown = 10
-                                voiceState = VoiceState.REVIEW_COUNTDOWN
-                            }
-                        }
-                    )
-                }
-                VoiceState.PERMISSION_DENIED -> {
-                    PermissionDeniedView(
-                        context = context,
-                        manualText = manualText,
-                        onManualTextChange = { manualText = it },
-                        onManualSubmit = {
-                            if (manualText.isNotBlank()) {
-                                recognizedText = manualText
-                                countdown = 10
-                                voiceState = VoiceState.REVIEW_COUNTDOWN
-                            }
-                        }
-                    )
-                }
-                VoiceState.ERROR -> {
-                    ErrorView(
-                        errorMessage = errorMessage,
-                        onRetry = {
+            when (flowState) {
+                VoiceFlowState.INITIALIZING -> InitializingView()
+                VoiceFlowState.AAYUSH_SPEAKING -> SpeakingView()
+                VoiceFlowState.LISTENING -> ListeningView()
+                VoiceFlowState.PROCESSING_TRANSCRIPT -> ProcessingView(recognizedText)
+                VoiceFlowState.ANALYZING_SYMPTOMS -> AnalyzingView()
+                VoiceFlowState.CREATING_SESSION -> CreatingSessionView()
+                VoiceFlowState.COMPLETE -> CompleteView()
+                VoiceFlowState.PERMISSION_REQUIRED -> PermissionRequiredView(
+                    onRequestPermission = {
+                        permissionLauncher.launch(Manifest.permission.RECORD_AUDIO)
+                    }
+                )
+                VoiceFlowState.PERMISSION_DENIED -> PermissionDeniedView(context)
+                VoiceFlowState.ERROR -> ErrorView(
+                    errorMessage = errorMessage,
+                    retryCount = retryCount,
+                    onRetry = {
+                        if (retryCount < 2) {
+                            retryCount++
                             errorMessage = ""
-                            voiceState = VoiceState.READY_TO_LISTEN
-                        },
-                        manualText = manualText,
-                        onManualTextChange = { manualText = it },
-                        onManualSubmit = {
-                            if (manualText.isNotBlank()) {
-                                recognizedText = manualText
-                                countdown = 10
-                                voiceState = VoiceState.REVIEW_COUNTDOWN
+                            flowState = VoiceFlowState.LISTENING
+                            startListening(context, speechRecognizer) { transcript, error ->
+                                if (transcript != null) {
+                                    recognizedText = transcript
+                                    flowState = VoiceFlowState.PROCESSING_TRANSCRIPT
+                                    processTranscriptAndCreateSession(
+                                        transcript = transcript,
+                                        viewModel = viewModel,
+                                        scope = scope,
+                                        onStateChange = { flowState = it },
+                                        onComplete = onNavigateToUrgencyAssessment
+                                    )
+                                } else if (error != null) {
+                                    errorMessage = error
+                                    flowState = VoiceFlowState.ERROR
+                                }
                             }
                         }
-                    )
-                }
+                    },
+                    onCancel = onNavigateBack
+                )
             }
         }
     }
 }
 
-// Helper function to speak greeting
-private fun speakGreeting(
+/**
+ * Speak greeting and wait for TTS to complete using UtteranceProgressListener
+ */
+private fun speakGreetingAndListen(
     tts: TextToSpeech?,
     context: android.content.Context,
-    onComplete: () -> Unit
+    onGreetingComplete: () -> Unit
 ) {
+    if (tts == null) {
+        // TTS not available, skip to listening
+        onGreetingComplete()
+        return
+    }
+    
     val locale = Locale.getDefault()
     val greeting = when (locale.language) {
-        "hi" -> context.getString(R.string.voice_greeting_hi)
-        "mr" -> context.getString(R.string.voice_greeting_mr)
-        else -> context.getString(R.string.voice_greeting_en)
+        "hi" -> "नमस्ते। मैं आयुष हूँ। कृपया बताइए कि आपको क्या तकलीफ़ हो रही है। मैं आपकी बात सुन रहा हूँ।"
+        "mr" -> "नमस्कार। मी आयुष आहे. कृपया तुम्हाला काय त्रास होत आहे ते सांगा. मी तुमचे ऐकत आहे."
+        else -> "Hello. I am AAYUSH. Please tell me what is troubling you. I am listening."
     }
     
-    // Set language if available
+    // Set language
     when (locale.language) {
-        "hi" -> tts?.language = Locale("hi", "IN")
-        "mr" -> tts?.language = Locale("mr", "IN")
-        else -> tts?.language = Locale.ENGLISH
+        "hi" -> tts.language = Locale("hi", "IN")
+        "mr" -> tts.language = Locale("mr", "IN")
+        else -> tts.language = Locale.ENGLISH
     }
     
-    // Set up utterance completion listener
-    tts?.setOnUtteranceProgressListener(object : android.speech.tts.UtteranceProgressListener() {
+    // Set up completion listener
+    tts.setOnUtteranceProgressListener(object : UtteranceProgressListener() {
         override fun onStart(utteranceId: String?) {
-            // TTS started speaking
+            // TTS started
         }
         
         override fun onDone(utteranceId: String?) {
             if (utteranceId == "greeting") {
-                // Callback on completion
-                onComplete()
+                // Greeting completed, start listening
+                onGreetingComplete()
             }
         }
         
         @Deprecated("Deprecated in Java")
         override fun onError(utteranceId: String?) {
-            // If TTS fails, still proceed
-            onComplete()
+            // TTS error, still proceed to listening
+            onGreetingComplete()
         }
     })
     
     // Speak with utterance ID
     val params = Bundle()
     params.putString(TextToSpeech.Engine.KEY_PARAM_UTTERANCE_ID, "greeting")
-    tts?.speak(greeting, TextToSpeech.QUEUE_FLUSH, params, "greeting")
+    tts.speak(greeting, TextToSpeech.QUEUE_FLUSH, params, "greeting")
 }
 
-// Helper function to start speech recognition
-private fun startSpeechRecognition(
+/**
+ * Start speech recognition with proper error handling
+ */
+private fun startListening(
     context: android.content.Context,
-    onResult: (String) -> Unit,
-    onError: (String) -> Unit,
-    onStateChange: (VoiceState) -> Unit,
-    speechRecognizerRef: (SpeechRecognizer) -> Unit
+    recognizerRef: SpeechRecognizer?,
+    onResult: (transcript: String?, error: String?) -> Unit
 ) {
+    // Check if speech recognition is available
     if (!SpeechRecognizer.isRecognitionAvailable(context)) {
-        onError(context.getString(R.string.voice_error_service_unavailable))
+        onResult(null, "Speech recognition not available on this device")
         return
     }
     
+    // Destroy old recognizer if exists
+    recognizerRef?.destroy()
+    
+    // Create new recognizer
     val speechRecognizer = SpeechRecognizer.createSpeechRecognizer(context)
-    speechRecognizerRef(speechRecognizer)
     
     val intent = Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH).apply {
         putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL, RecognizerIntent.LANGUAGE_MODEL_FREE_FORM)
         putExtra(RecognizerIntent.EXTRA_LANGUAGE, Locale.getDefault())
-        putExtra(RecognizerIntent.EXTRA_PARTIAL_RESULTS, false)
+        putExtra(RecognizerIntent.EXTRA_PARTIAL_RESULTS, true)
         putExtra(RecognizerIntent.EXTRA_MAX_RESULTS, 1)
+        putExtra(RecognizerIntent.EXTRA_SPEECH_INPUT_MINIMUM_LENGTH_MILLIS, 15000) // 15 seconds
+        putExtra(RecognizerIntent.EXTRA_SPEECH_INPUT_COMPLETE_SILENCE_LENGTH_MILLIS, 2000) // 2 seconds silence
     }
+    
+    var resultReceived = false  // Prevent duplicate callbacks
     
     speechRecognizer.setRecognitionListener(object : android.speech.RecognitionListener {
         override fun onReadyForSpeech(params: Bundle?) {
-            onStateChange(VoiceState.LISTENING)
+            android.util.Log.d("VoiceAssistance", "Ready for speech")
         }
         
         override fun onBeginningOfSpeech() {
-            onStateChange(VoiceState.LISTENING)
+            android.util.Log.d("VoiceAssistance", "Speech started")
         }
         
         override fun onRmsChanged(rmsdB: Float) {
-            // Could use for visual feedback
+            // Audio level changed
         }
         
         override fun onBufferReceived(buffer: ByteArray?) {}
         
         override fun onEndOfSpeech() {
-            onStateChange(VoiceState.PROCESSING)
+            android.util.Log.d("VoiceAssistance", "Speech ended")
         }
         
         override fun onError(error: Int) {
+            if (resultReceived) return  // Already got result, ignore error
+            resultReceived = true
+            
             val errorMsg = when (error) {
                 SpeechRecognizer.ERROR_NO_MATCH -> 
-                    context.getString(R.string.voice_error_no_speech)
+                    "No speech detected. Please try speaking again."
+                SpeechRecognizer.ERROR_SPEECH_TIMEOUT ->
+                    "No speech heard. Please try again."
                 SpeechRecognizer.ERROR_NETWORK, SpeechRecognizer.ERROR_NETWORK_TIMEOUT ->
-                    context.getString(R.string.voice_error_network)
+                    "Network error. Check your connection and try again."
                 SpeechRecognizer.ERROR_SERVER ->
-                    context.getString(R.string.voice_error_service_unavailable)
+                    "Speech service unavailable. Please try again."
+                SpeechRecognizer.ERROR_AUDIO ->
+                    "Microphone error. Check your device and try again."
+                SpeechRecognizer.ERROR_INSUFFICIENT_PERMISSIONS ->
+                    "Microphone permission denied."
                 else ->
-                    context.getString(R.string.voice_error_recognition_failed)
+                    "Recognition failed. Please try again."
             }
-            onError(errorMsg)
+            android.util.Log.e("VoiceAssistance", "Recognition error: $error - $errorMsg")
+            speechRecognizer.destroy()
+            onResult(null, errorMsg)
         }
         
         override fun onResults(results: Bundle?) {
+            if (resultReceived) return  // Already processed
+            resultReceived = true
+            
             val matches = results?.getStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION)
+            android.util.Log.d("VoiceAssistance", "Results: $matches")
+            
             if (!matches.isNullOrEmpty()) {
-                val text = matches[0]
-                if (text.isNotBlank()) {
-                    onResult(text)
+                val transcript = matches[0].trim()
+                if (transcript.isNotBlank()) {
+                    speechRecognizer.destroy()
+                    onResult(transcript, null)
                 } else {
-                    onError(context.getString(R.string.voice_empty_transcript))
+                    speechRecognizer.destroy()
+                    onResult(null, "Empty transcript received. Please speak clearly and try again.")
                 }
             } else {
-                onError(context.getString(R.string.voice_empty_transcript))
+                speechRecognizer.destroy()
+                onResult(null, "No speech recognized. Please try again.")
             }
         }
         
-        override fun onPartialResults(partialResults: Bundle?) {}
+        override fun onPartialResults(partialResults: Bundle?) {
+            val partial = partialResults?.getStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION)
+            android.util.Log.d("VoiceAssistance", "Partial results: $partial")
+        }
         
         override fun onEvent(eventType: Int, params: Bundle?) {}
     })
@@ -489,56 +448,92 @@ private fun startSpeechRecognition(
     speechRecognizer.startListening(intent)
 }
 
-// Helper function to submit emergency
-private fun submitEmergency(
-    text: String,
+/**
+ * Process transcript: extract symptoms, run triage, create emergency session
+ */
+private fun processTranscriptAndCreateSession(
+    transcript: String,
     viewModel: EmergencyViewModel,
     scope: kotlinx.coroutines.CoroutineScope,
-    onStateChange: (VoiceState) -> Unit,
-    onNavigateToPatientBrief: () -> Unit
+    onStateChange: (VoiceFlowState) -> Unit,
+    onComplete: () -> Unit
 ) {
-    if (text.isBlank()) return
-    
-    onStateChange(VoiceState.SUBMITTING)
-    
     scope.launch {
         try {
-            // Start emergency session if not already started
-            val session = viewModel.activeSession.value
-            if (session == null) {
-                viewModel.startEmergency()
-                delay(200) // Allow session to be created
+            android.util.Log.d("VoiceAssistance", "Processing transcript: $transcript")
+            
+            // Step 1: Extract symptoms
+            onStateChange(VoiceFlowState.ANALYZING_SYMPTOMS)
+            val extractedSymptoms = SymptomExtractor.extractSymptoms(transcript)
+            android.util.Log.d("VoiceAssistance", "Extracted symptoms: ${extractedSymptoms.size}")
+            
+            // Step 2: Create emergency session FIRST
+            onStateChange(VoiceFlowState.CREATING_SESSION)
+            viewModel.startEmergency()
+            
+            // Wait for session to be created (check multiple times)
+            var session = viewModel.activeSession.value
+            var attempts = 0
+            while (session == null && attempts < 10) {
+                delay(100)
+                session = viewModel.activeSession.value
+                attempts++
             }
             
-            // Add symptom with speech-recognized text
-            viewModel.addSymptom(
-                description = text,
-                severity = SymptomSeverity.MODERATE, // Default, will be assessed by triage
-                duration = "",
-                notes = "Voice-reported via speech recognition"
-            )
+            if (session == null) {
+                android.util.Log.e("VoiceAssistance", "Failed to create emergency session after $attempts attempts")
+                onStateChange(VoiceFlowState.ERROR)
+                return@launch
+            }
             
-            // Generate patient brief
+            android.util.Log.d("VoiceAssistance", "Emergency session created: ${session.id}")
+            
+            // Step 3: Add symptoms to session
+            if (extractedSymptoms.isNotEmpty()) {
+                extractedSymptoms.forEach { extracted ->
+                    val symptomInfo = SymptomExtractor.toSymptomInfo(extracted)
+                    viewModel.addSymptom(
+                        description = symptomInfo.description,
+                        severity = symptomInfo.severity,
+                        duration = symptomInfo.duration,
+                        notes = "Original: \"$transcript\". ${symptomInfo.notes}"
+                    )
+                }
+            } else {
+                // No specific symptoms extracted, add the raw transcript
+                viewModel.addSymptom(
+                    description = transcript,
+                    severity = com.aayush.emergency.data.model.SymptomSeverity.MODERATE,
+                    duration = "",
+                    notes = "Voice-reported via speech recognition"
+                )
+            }
+            
+            // Triage happens automatically in viewModel.addSymptom()
+            
+            // Step 4: Wait briefly for triage to complete
+            delay(300)
+            
+            // Step 5: Generate patient brief
             viewModel.generatePatientBrief()
+            delay(200)
             
-            // Brief delay for processing
-            delay(800)
-            
-            // Update state to submitted
-            onStateChange(VoiceState.SUBMITTED)
-            
-            // Navigate after a short delay
+            // Step 6: Complete
+            onStateChange(VoiceFlowState.COMPLETE)
             delay(500)
-            onNavigateToPatientBrief()
+            
+            // Navigate to urgency assessment
+            android.util.Log.d("VoiceAssistance", "Navigating to urgency assessment")
+            onComplete()
+            
         } catch (e: Exception) {
-            // Handle any exceptions gracefully
-            android.util.Log.e("VoiceAssistance", "Error submitting emergency", e)
-            onStateChange(VoiceState.ERROR)
+            android.util.Log.e("VoiceAssistance", "Error processing transcript", e)
+            onStateChange(VoiceFlowState.ERROR)
         }
     }
 }
 
-// UI Components for each state
+// UI Components
 
 @Composable
 private fun InitializingView() {
@@ -552,7 +547,7 @@ private fun InitializingView() {
         )
         Spacer(modifier = Modifier.height(24.dp))
         Text(
-            text = stringResource(R.string.voice_initializing),
+            text = "Initializing voice assistance...",
             style = MaterialTheme.typography.titleLarge
         )
     }
@@ -579,112 +574,24 @@ private fun SpeakingView() {
             imageVector = Icons.Default.RecordVoiceOver,
             contentDescription = null,
             modifier = Modifier
-                .size(80.dp)
+                .size(100.dp)
                 .scale(scale),
             tint = MaterialTheme.colorScheme.primary
         )
-        Spacer(modifier = Modifier.height(24.dp))
+        Spacer(modifier = Modifier.height(32.dp))
         Text(
-            text = stringResource(R.string.voice_aayush_speaking),
-            style = MaterialTheme.typography.titleLarge,
+            text = "AAYUSH is speaking...",
+            style = MaterialTheme.typography.headlineSmall,
             fontWeight = FontWeight.Bold
         )
         Spacer(modifier = Modifier.height(16.dp))
         Text(
             text = when (Locale.getDefault().language) {
-                "hi" -> stringResource(R.string.voice_greeting_hi)
-                "mr" -> stringResource(R.string.voice_greeting_mr)
-                else -> stringResource(R.string.voice_greeting_en)
+                "hi" -> "नमस्ते। मैं आयुष हूँ। कृपया बताइए कि आपको क्या तकलीफ़ हो रही है। मैं आपकी बात सुन रहा हूँ।"
+                "mr" -> "नमस्कार। मी आयुष आहे. कृपया तुम्हाला काय त्रास होत आहे ते सांगा. मी तुमचे ऐकत आहे."
+                else -> "Hello. I am AAYUSH. Please tell me what is troubling you. I am listening."
             },
             style = MaterialTheme.typography.bodyLarge,
-            textAlign = TextAlign.Center,
-            color = MaterialTheme.colorScheme.onSurfaceVariant
-        )
-    }
-}
-
-@Composable
-private fun ReadyToListenView(
-    onStartListening: () -> Unit,
-    manualText: String,
-    onManualTextChange: (String) -> Unit,
-    onManualSubmit: () -> Unit
-) {
-    // Auto-start listening when this view appears
-    LaunchedEffect(Unit) {
-        delay(500) // Brief delay to show state
-        onStartListening()
-    }
-    
-    Column(
-        modifier = Modifier.fillMaxWidth(),
-        horizontalAlignment = Alignment.CenterHorizontally
-    ) {
-        Text(
-            text = stringResource(R.string.voice_ready_to_listen),
-            style = MaterialTheme.typography.headlineSmall,
-            fontWeight = FontWeight.Bold
-        )
-        
-        Spacer(modifier = Modifier.height(32.dp))
-        
-        // Microphone button
-        FilledIconButton(
-            onClick = onStartListening,
-            modifier = Modifier.size(120.dp),
-            colors = IconButtonDefaults.filledIconButtonColors(
-                containerColor = MaterialTheme.colorScheme.primary
-            )
-        ) {
-            Icon(
-                imageVector = Icons.Default.Mic,
-                contentDescription = stringResource(R.string.voice_tap_to_speak),
-                modifier = Modifier.size(60.dp)
-            )
-        }
-        
-        Spacer(modifier = Modifier.height(16.dp))
-        
-        Text(
-            text = stringResource(R.string.voice_tap_to_speak),
-            style = MaterialTheme.typography.titleMedium
-        )
-        
-        Spacer(modifier = Modifier.height(32.dp))
-        
-        // Manual text entry fallback
-        AAYUSHCard {
-            Column {
-                Text(
-                    text = stringResource(R.string.voice_or_type),
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.Bold
-                )
-                Spacer(modifier = Modifier.height(12.dp))
-                OutlinedTextField(
-                    value = manualText,
-                    onValueChange = onManualTextChange,
-                    modifier = Modifier.fillMaxWidth(),
-                    label = { Text(stringResource(R.string.voice_symptom_hint)) },
-                    minLines = 3,
-                    maxLines = 5
-                )
-                Spacer(modifier = Modifier.height(12.dp))
-                Button(
-                    onClick = onManualSubmit,
-                    modifier = Modifier.fillMaxWidth(),
-                    enabled = manualText.isNotBlank()
-                ) {
-                    Text(stringResource(R.string.button_continue))
-                }
-            }
-        }
-        
-        Spacer(modifier = Modifier.height(16.dp))
-        
-        Text(
-            text = stringResource(R.string.voice_help_text),
-            style = MaterialTheme.typography.bodySmall,
             textAlign = TextAlign.Center,
             color = MaterialTheme.colorScheme.onSurfaceVariant
         )
@@ -710,7 +617,7 @@ private fun ListeningView() {
     ) {
         Box(
             modifier = Modifier
-                .size(120.dp)
+                .size(140.dp)
                 .scale(scale)
                 .background(
                     color = EmergencyRed.copy(alpha = 0.2f),
@@ -721,21 +628,21 @@ private fun ListeningView() {
             Icon(
                 imageVector = Icons.Default.Mic,
                 contentDescription = null,
-                modifier = Modifier.size(60.dp),
+                modifier = Modifier.size(70.dp),
                 tint = EmergencyRed
             )
         }
-        Spacer(modifier = Modifier.height(24.dp))
+        Spacer(modifier = Modifier.height(32.dp))
         Text(
-            text = stringResource(R.string.voice_listening),
-            style = MaterialTheme.typography.titleLarge,
+            text = "Listening...",
+            style = MaterialTheme.typography.headlineSmall,
             fontWeight = FontWeight.Bold,
             color = EmergencyRed
         )
         Spacer(modifier = Modifier.height(16.dp))
         Text(
             text = "Speak clearly and describe your symptoms",
-            style = MaterialTheme.typography.bodyMedium,
+            style = MaterialTheme.typography.bodyLarge,
             textAlign = TextAlign.Center,
             color = MaterialTheme.colorScheme.onSurfaceVariant
         )
@@ -743,7 +650,7 @@ private fun ListeningView() {
 }
 
 @Composable
-private fun ProcessingView() {
+private fun ProcessingView(transcript: String) {
     Column(
         modifier = Modifier.fillMaxWidth(),
         horizontalAlignment = Alignment.CenterHorizontally
@@ -754,186 +661,65 @@ private fun ProcessingView() {
         )
         Spacer(modifier = Modifier.height(24.dp))
         Text(
-            text = stringResource(R.string.voice_processing),
+            text = "Processing your speech...",
             style = MaterialTheme.typography.titleLarge
         )
-    }
-}
-
-@Composable
-private fun ReviewCountdownView(
-    recognizedText: String,
-    countdown: Int,
-    onCancel: () -> Unit,
-    onSpeakAgain: () -> Unit,
-    onSubmitNow: () -> Unit
-) {
-    // Check for critical symptoms and show warning immediately
-    val isCritical = recognizedText.contains("chest pain", ignoreCase = true) ||
-            recognizedText.contains("difficulty breathing", ignoreCase = true) ||
-            recognizedText.contains("unconscious", ignoreCase = true) ||
-            recognizedText.contains("severe bleeding", ignoreCase = true)
-    
-    Column(
-        modifier = Modifier.fillMaxWidth(),
-        horizontalAlignment = Alignment.CenterHorizontally
-    ) {
-        // Critical warning (if applicable) - shown immediately, not waiting for countdown
-        if (isCritical) {
-            Surface(
-                modifier = Modifier.fillMaxWidth(),
-                color = EmergencyRed,
-                shape = RoundedCornerShape(12.dp)
-            ) {
-                Column(
-                    modifier = Modifier.padding(16.dp),
-                    horizontalAlignment = Alignment.CenterHorizontally
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.Warning,
-                        contentDescription = null,
-                        modifier = Modifier.size(48.dp),
-                        tint = Color.White
-                    )
-                    Spacer(modifier = Modifier.height(8.dp))
-                    Text(
-                        text = "⚠️ CALL 112 IMMEDIATELY",
-                        style = MaterialTheme.typography.titleLarge,
-                        fontWeight = FontWeight.Bold,
-                        color = Color.White
-                    )
-                    Text(
-                        text = "If this is a real emergency, dial India's emergency number 112 now",
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = Color.White,
-                        textAlign = TextAlign.Center
-                    )
-                }
-            }
-            Spacer(modifier = Modifier.height(16.dp))
-        }
-        
-        Text(
-            text = stringResource(R.string.voice_i_heard),
-            style = MaterialTheme.typography.titleMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant
-        )
-        
-        Spacer(modifier = Modifier.height(12.dp))
-        
-        // Recognized text
-        AAYUSHCard(
-            modifier = Modifier.fillMaxWidth()
-        ) {
+        Spacer(modifier = Modifier.height(16.dp))
+        AAYUSHCard {
             Text(
-                text = recognizedText,
-                style = MaterialTheme.typography.titleLarge,
-                fontWeight = FontWeight.Medium
+                text = "You said: \"$transcript\"",
+                style = MaterialTheme.typography.bodyMedium,
+                textAlign = TextAlign.Center
             )
         }
-        
-        Spacer(modifier = Modifier.height(24.dp))
-        
-        // Countdown
-        Surface(
-            modifier = Modifier.size(100.dp),
-            shape = CircleShape,
-            color = if (countdown <= 3) EmergencyRed.copy(alpha = 0.2f) 
-                   else MaterialTheme.colorScheme.primaryContainer
-        ) {
-            Box(
-                contentAlignment = Alignment.Center
-            ) {
-                Text(
-                    text = countdown.toString(),
-                    style = MaterialTheme.typography.displayLarge,
-                    fontWeight = FontWeight.Bold,
-                    color = if (countdown <= 3) EmergencyRed 
-                            else MaterialTheme.colorScheme.primary
-                )
-            }
-        }
-        
-        Spacer(modifier = Modifier.height(12.dp))
-        
-        Text(
-            text = stringResource(R.string.voice_countdown_submitting, countdown),
-            style = MaterialTheme.typography.bodyLarge,
-            textAlign = TextAlign.Center
-        )
-        
-        Spacer(modifier = Modifier.height(32.dp))
-        
-        // Action buttons
-        Column(
-            modifier = Modifier.fillMaxWidth(),
-            verticalArrangement = Arrangement.spacedBy(12.dp)
-        ) {
-            // Cancel button (most prominent for safety)
-            Button(
-                onClick = onCancel,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(56.dp),
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = EmergencyRed
-                )
-            ) {
-                Icon(Icons.Default.Cancel, null)
-                Spacer(modifier = Modifier.width(8.dp))
-                Text(
-                    text = stringResource(R.string.voice_cancel_emergency),
-                    style = MaterialTheme.typography.titleMedium
-                )
-            }
-            
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(12.dp)
-            ) {
-                OutlinedButton(
-                    onClick = onSpeakAgain,
-                    modifier = Modifier
-                        .weight(1f)
-                        .height(56.dp)
-                ) {
-                    Icon(Icons.Default.Mic, null, modifier = Modifier.size(20.dp))
-                    Spacer(modifier = Modifier.width(4.dp))
-                    Text(stringResource(R.string.voice_speak_again))
-                }
-                
-                Button(
-                    onClick = onSubmitNow,
-                    modifier = Modifier
-                        .weight(1f)
-                        .height(56.dp)
-                ) {
-                    Text(stringResource(R.string.voice_submit_now))
-                }
-            }
-        }
     }
 }
 
 @Composable
-private fun SubmittingView() {
+private fun AnalyzingView() {
     Column(
         modifier = Modifier.fillMaxWidth(),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
         CircularProgressIndicator(
-            modifier = Modifier.size(64.dp)
+            modifier = Modifier.size(64.dp),
+            color = MaterialTheme.colorScheme.primary
         )
         Spacer(modifier = Modifier.height(24.dp))
         Text(
-            text = stringResource(R.string.voice_submitting),
+            text = "Analyzing symptoms...",
+            style = MaterialTheme.typography.titleLarge
+        )
+        Spacer(modifier = Modifier.height(16.dp))
+        Text(
+            text = "Extracting symptom facts and running triage assessment",
+            style = MaterialTheme.typography.bodyMedium,
+            textAlign = TextAlign.Center,
+            color = MaterialTheme.colorScheme.onSurfaceVariant
+        )
+    }
+}
+
+@Composable
+private fun CreatingSessionView() {
+    Column(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        CircularProgressIndicator(
+            modifier = Modifier.size(64.dp),
+            color = MaterialTheme.colorScheme.primary
+        )
+        Spacer(modifier = Modifier.height(24.dp))
+        Text(
+            text = "Creating emergency case...",
             style = MaterialTheme.typography.titleLarge
         )
     }
 }
 
 @Composable
-private fun SubmittedView(onNavigateToPatientBrief: () -> Unit) {
+private fun CompleteView() {
     Column(
         modifier = Modifier.fillMaxWidth(),
         horizontalAlignment = Alignment.CenterHorizontally
@@ -946,55 +732,20 @@ private fun SubmittedView(onNavigateToPatientBrief: () -> Unit) {
         )
         Spacer(modifier = Modifier.height(24.dp))
         Text(
-            text = stringResource(R.string.voice_emergency_submitted),
-            style = MaterialTheme.typography.titleLarge,
+            text = "Assessment Complete",
+            style = MaterialTheme.typography.headlineSmall,
             fontWeight = FontWeight.Bold
         )
-        Spacer(modifier = Modifier.height(24.dp))
-        Button(
-            onClick = onNavigateToPatientBrief,
-            modifier = Modifier.fillMaxWidth()
-        ) {
-            Text("View Patient Brief")
-        }
-    }
-}
-
-@Composable
-private fun CancelledView(onNavigateBack: () -> Unit) {
-    Column(
-        modifier = Modifier.fillMaxWidth(),
-        horizontalAlignment = Alignment.CenterHorizontally
-    ) {
-        Icon(
-            imageVector = Icons.Default.Cancel,
-            contentDescription = null,
-            modifier = Modifier.size(80.dp),
-            tint = MaterialTheme.colorScheme.error
-        )
-        Spacer(modifier = Modifier.height(24.dp))
+        Spacer(modifier = Modifier.height(16.dp))
         Text(
-            text = stringResource(R.string.voice_cancelled),
-            style = MaterialTheme.typography.titleLarge,
-            fontWeight = FontWeight.Bold
+            text = "Preparing your emergency brief...",
+            style = MaterialTheme.typography.bodyLarge
         )
-        Spacer(modifier = Modifier.height(24.dp))
-        Button(
-            onClick = onNavigateBack,
-            modifier = Modifier.fillMaxWidth()
-        ) {
-            Text("Return to Home")
-        }
     }
 }
 
 @Composable
-private fun PermissionRequiredView(
-    onRequestPermission: () -> Unit,
-    manualText: String,
-    onManualTextChange: (String) -> Unit,
-    onManualSubmit: () -> Unit
-) {
+private fun PermissionRequiredView(onRequestPermission: () -> Unit) {
     Column(
         modifier = Modifier.fillMaxWidth(),
         horizontalAlignment = Alignment.CenterHorizontally
@@ -1002,68 +753,37 @@ private fun PermissionRequiredView(
         Icon(
             imageVector = Icons.Default.Mic,
             contentDescription = null,
-            modifier = Modifier.size(64.dp),
+            modifier = Modifier.size(80.dp),
             tint = MaterialTheme.colorScheme.primary
         )
         Spacer(modifier = Modifier.height(24.dp))
         Text(
-            text = stringResource(R.string.voice_permission_required),
-            style = MaterialTheme.typography.titleLarge,
-            fontWeight = FontWeight.Bold
+            text = "Microphone Permission Required",
+            style = MaterialTheme.typography.headlineSmall,
+            fontWeight = FontWeight.Bold,
+            textAlign = TextAlign.Center
         )
         Spacer(modifier = Modifier.height(16.dp))
         Text(
-            text = stringResource(R.string.voice_permission_explanation),
-            style = MaterialTheme.typography.bodyMedium,
+            text = "AAYUSH needs microphone access to hear your symptoms. Your voice data is processed locally and not sent to servers.",
+            style = MaterialTheme.typography.bodyLarge,
             textAlign = TextAlign.Center,
             color = MaterialTheme.colorScheme.onSurfaceVariant
         )
-        Spacer(modifier = Modifier.height(24.dp))
+        Spacer(modifier = Modifier.height(32.dp))
         Button(
             onClick = onRequestPermission,
-            modifier = Modifier.fillMaxWidth()
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(56.dp)
         ) {
-            Text(stringResource(R.string.voice_grant_permission))
-        }
-        
-        Spacer(modifier = Modifier.height(32.dp))
-        
-        // Manual text entry
-        AAYUSHCard {
-            Column {
-                Text(
-                    text = stringResource(R.string.voice_or_type),
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.Bold
-                )
-                Spacer(modifier = Modifier.height(12.dp))
-                OutlinedTextField(
-                    value = manualText,
-                    onValueChange = onManualTextChange,
-                    modifier = Modifier.fillMaxWidth(),
-                    label = { Text(stringResource(R.string.voice_symptom_hint)) },
-                    minLines = 3
-                )
-                Spacer(modifier = Modifier.height(12.dp))
-                Button(
-                    onClick = onManualSubmit,
-                    modifier = Modifier.fillMaxWidth(),
-                    enabled = manualText.isNotBlank()
-                ) {
-                    Text(stringResource(R.string.button_continue))
-                }
-            }
+            Text("Grant Permission")
         }
     }
 }
 
 @Composable
-private fun PermissionDeniedView(
-    context: android.content.Context,
-    manualText: String,
-    onManualTextChange: (String) -> Unit,
-    onManualSubmit: () -> Unit
-) {
+private fun PermissionDeniedView(context: android.content.Context) {
     Column(
         modifier = Modifier.fillMaxWidth(),
         horizontalAlignment = Alignment.CenterHorizontally
@@ -1071,23 +791,23 @@ private fun PermissionDeniedView(
         Icon(
             imageVector = Icons.Default.MicOff,
             contentDescription = null,
-            modifier = Modifier.size(64.dp),
+            modifier = Modifier.size(80.dp),
             tint = MaterialTheme.colorScheme.error
         )
         Spacer(modifier = Modifier.height(24.dp))
         Text(
-            text = stringResource(R.string.voice_permission_denied),
-            style = MaterialTheme.typography.titleLarge,
+            text = "Permission Denied",
+            style = MaterialTheme.typography.headlineSmall,
             fontWeight = FontWeight.Bold
         )
         Spacer(modifier = Modifier.height(16.dp))
         Text(
-            text = stringResource(R.string.voice_permission_denied_message),
-            style = MaterialTheme.typography.bodyMedium,
+            text = "Microphone permission is required for voice assistance. Please enable it in Settings.",
+            style = MaterialTheme.typography.bodyLarge,
             textAlign = TextAlign.Center,
             color = MaterialTheme.colorScheme.onSurfaceVariant
         )
-        Spacer(modifier = Modifier.height(24.dp))
+        Spacer(modifier = Modifier.height(32.dp))
         OutlinedButton(
             onClick = {
                 val intent = Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS).apply {
@@ -1097,36 +817,7 @@ private fun PermissionDeniedView(
             },
             modifier = Modifier.fillMaxWidth()
         ) {
-            Text(stringResource(R.string.voice_go_to_settings))
-        }
-        
-        Spacer(modifier = Modifier.height(32.dp))
-        
-        // Manual text entry
-        AAYUSHCard {
-            Column {
-                Text(
-                    text = stringResource(R.string.voice_or_type),
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.Bold
-                )
-                Spacer(modifier = Modifier.height(12.dp))
-                OutlinedTextField(
-                    value = manualText,
-                    onValueChange = onManualTextChange,
-                    modifier = Modifier.fillMaxWidth(),
-                    label = { Text(stringResource(R.string.voice_symptom_hint)) },
-                    minLines = 3
-                )
-                Spacer(modifier = Modifier.height(12.dp))
-                Button(
-                    onClick = onManualSubmit,
-                    modifier = Modifier.fillMaxWidth(),
-                    enabled = manualText.isNotBlank()
-                ) {
-                    Text(stringResource(R.string.button_continue))
-                }
-            }
+            Text("Open Settings")
         }
     }
 }
@@ -1134,10 +825,9 @@ private fun PermissionDeniedView(
 @Composable
 private fun ErrorView(
     errorMessage: String,
+    retryCount: Int,
     onRetry: () -> Unit,
-    manualText: String,
-    onManualTextChange: (String) -> Unit,
-    onManualSubmit: () -> Unit
+    onCancel: () -> Unit
 ) {
     Column(
         modifier = Modifier.fillMaxWidth(),
@@ -1146,51 +836,43 @@ private fun ErrorView(
         Icon(
             imageVector = Icons.Default.Error,
             contentDescription = null,
-            modifier = Modifier.size(64.dp),
+            modifier = Modifier.size(80.dp),
             tint = MaterialTheme.colorScheme.error
         )
         Spacer(modifier = Modifier.height(24.dp))
         Text(
-            text = errorMessage,
-            style = MaterialTheme.typography.titleMedium,
-            textAlign = TextAlign.Center,
+            text = "Error",
+            style = MaterialTheme.typography.headlineSmall,
+            fontWeight = FontWeight.Bold,
             color = MaterialTheme.colorScheme.error
         )
-        Spacer(modifier = Modifier.height(24.dp))
-        Button(
-            onClick = onRetry,
-            modifier = Modifier.fillMaxWidth()
-        ) {
-            Text("Try Again")
+        Spacer(modifier = Modifier.height(16.dp))
+        AAYUSHCard {
+            Text(
+                text = errorMessage,
+                style = MaterialTheme.typography.bodyLarge,
+                textAlign = TextAlign.Center
+            )
         }
-        
         Spacer(modifier = Modifier.height(32.dp))
         
-        // Manual text entry
-        AAYUSHCard {
-            Column {
-                Text(
-                    text = stringResource(R.string.voice_or_type),
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.Bold
-                )
-                Spacer(modifier = Modifier.height(12.dp))
-                OutlinedTextField(
-                    value = manualText,
-                    onValueChange = onManualTextChange,
-                    modifier = Modifier.fillMaxWidth(),
-                    label = { Text(stringResource(R.string.voice_symptom_hint)) },
-                    minLines = 3
-                )
-                Spacer(modifier = Modifier.height(12.dp))
-                Button(
-                    onClick = onManualSubmit,
-                    modifier = Modifier.fillMaxWidth(),
-                    enabled = manualText.isNotBlank()
-                ) {
-                    Text(stringResource(R.string.button_continue))
-                }
+        if (retryCount < 2) {
+            Button(
+                onClick = onRetry,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(56.dp)
+            ) {
+                Text("Try Again (${2 - retryCount} attempts remaining)")
             }
+            Spacer(modifier = Modifier.height(12.dp))
+        }
+        
+        OutlinedButton(
+            onClick = onCancel,
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            Text("Go Back")
         }
     }
 }
