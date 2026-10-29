@@ -300,9 +300,9 @@
     
     <!-- Voice Assistance -->
     <string name="voice_assistance_title">Voice Assistance</string>
-    <string name="voice_greeting_en">Hello! I am your AAYUSH. Please tell me what is troubling you. You can speak naturally.</string>
-    <string name="voice_greeting_hi">नमस्ते! मैं आपका आयुष हूँ। कृपया बताइए कि आपको क्या तकलीफ़ हो रही है।</string>
-    <string name="voice_greeting_mr">नमस्कार! मी तुमचा आयुष आहे. कृपया तुम्हाला काय त्रास होत आहे ते सांगा.</string>
+    <string name="voice_greeting_en">Hello! I am AAYUSH. Please tell me what is troubling you. I am listening.</string>
+    <string name="voice_greeting_hi">नमस्ते! मैं आयुष हूँ। आपको क्या तकलीफ़ हो रही है? कृपया बोलकर बताइए, मैं सुन रहा हूँ।</string>
+    <string name="voice_greeting_mr">नमस्कार! मी आयुष आहे. तुम्हाला काय त्रास होत आहे? कृपया बोला, मी ऐकत आहे.</string>
     <string name="voice_initializing">Preparing voice assistance…</string>
     <string name="voice_aayush_speaking">AAYUSH is speaking…</string>
     <string name="voice_ready_to_listen">Ready to listen</string>

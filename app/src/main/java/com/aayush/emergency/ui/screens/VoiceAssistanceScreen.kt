@@ -109,7 +109,24 @@ fun VoiceAssistanceScreen(
                 ) {
                     voiceState = VoiceState.AAYUSH_SPEAKING
                     speakGreeting(tts, context) {
-                        voiceState = VoiceState.READY_TO_LISTEN
+                        // Automatically start listening after greeting
+                        voiceState = VoiceState.LISTENING
+                        startSpeechRecognition(
+                            context = context,
+                            onResult = { text ->
+                                recognizedText = text
+                                countdown = 10
+                                voiceState = VoiceState.REVIEW_COUNTDOWN
+                            },
+                            onError = { error ->
+                                errorMessage = error
+                                voiceState = VoiceState.ERROR
+                            },
+                            onStateChange = { state ->
+                                voiceState = state
+                            },
+                            speechRecognizerRef = { sr -> speechRecognizer = sr }
+                        )
                     }
                 } else {
                     voiceState = VoiceState.PERMISSION_REQUIRED
@@ -120,7 +137,24 @@ fun VoiceAssistanceScreen(
                 if (context.checkSelfPermission(Manifest.permission.RECORD_AUDIO) ==
                     android.content.pm.PackageManager.PERMISSION_GRANTED
                 ) {
-                    voiceState = VoiceState.READY_TO_LISTEN
+                    // Skip greeting, start listening immediately
+                    voiceState = VoiceState.LISTENING
+                    startSpeechRecognition(
+                        context = context,
+                        onResult = { text ->
+                            recognizedText = text
+                            countdown = 10
+                            voiceState = VoiceState.REVIEW_COUNTDOWN
+                        },
+                        onError = { error ->
+                            errorMessage = error
+                            voiceState = VoiceState.ERROR
+                        },
+                        onStateChange = { state ->
+                            voiceState = state
+                        },
+                        speechRecognizerRef = { sr -> speechRecognizer = sr }
+                    )
                 } else {
                     voiceState = VoiceState.PERMISSION_REQUIRED
                 }
@@ -528,6 +562,12 @@ private fun ReadyToListenView(
     onManualTextChange: (String) -> Unit,
     onManualSubmit: () -> Unit
 ) {
+    // Auto-start listening when this view appears
+    LaunchedEffect(Unit) {
+        delay(500) // Brief delay to show state
+        onStartListening()
+    }
+    
     Column(
         modifier = Modifier.fillMaxWidth(),
         horizontalAlignment = Alignment.CenterHorizontally

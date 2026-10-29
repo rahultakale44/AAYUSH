@@ -172,7 +172,10 @@ fun AAYUSHNavHost(
         composable(Screen.EmergencyStart.route) {
             EmergencyStartScreen(
                 onNavigateBack = { navController.popBackStack() },
-                onContinue = { navController.navigate(Screen.SymptomCapture.route) }
+                onContinue = { 
+                    // After SOS, navigate to Patient Brief (emergency already created with default symptom)
+                    navController.navigate(Screen.PatientBrief.route)
+                }
             )
         }
         

@@ -44,7 +44,7 @@ import com.aayush.emergency.ui.viewmodel.EmergencyViewModel
 
 /**
  * Emergency activation screen
- * Initiates emergency session and provides clear guidance about prototype limitations
+ * For SOS button - immediately creates emergency case
  * Does NOT contact real emergency services - user must dial 112 manually
  */
 @OptIn(ExperimentalMaterial3Api::class)
@@ -55,6 +55,24 @@ fun EmergencyStartScreen(
     viewModel: EmergencyViewModel = viewModel()
 ) {
     val activeSession by viewModel.activeSession.collectAsState()
+    
+    // Auto-create emergency session and navigate forward immediately
+    LaunchedEffect(Unit) {
+        if (activeSession == null) {
+            viewModel.startEmergency()
+            // Add a default symptom for SOS
+            kotlinx.coroutines.delay(100) // Brief delay to ensure session is created
+            viewModel.addSymptom(
+                description = "SOS emergency button pressed - immediate assistance requested",
+                severity = com.aayush.emergency.data.model.SymptomSeverity.SEVERE,
+                duration = "Immediate",
+                notes = "Emergency activated via SOS button. Details to be gathered by responders."
+            )
+        }
+        // Brief delay to show the warning, then auto-continue
+        kotlinx.coroutines.delay(2000)
+        onContinue()
+    }
     
     Scaffold(
         topBar = {
@@ -79,13 +97,7 @@ fun EmergencyStartScreen(
                 .padding(20.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            ScreenHeader(
-                title = stringResource(R.string.emergency_start_title),
-                textAlign = TextAlign.Center,
-                modifier = Modifier.fillMaxWidth()
-            )
-            
-            Spacer(modifier = Modifier.height(24.dp))
+            Spacer(modifier = Modifier.height(40.dp))
             
             // Critical Warning - Must dial 112
             Box(
@@ -95,37 +107,42 @@ fun EmergencyStartScreen(
                         color = MaterialTheme.colorScheme.errorContainer,
                         shape = RoundedCornerShape(12.dp)
                     )
-                    .padding(20.dp)
+                    .padding(24.dp)
             ) {
-                Column {
-                    Row(
-                        verticalAlignment = Alignment.Top
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.Warning,
-                            contentDescription = stringResource(R.string.cd_warning_icon),
-                            tint = MaterialTheme.colorScheme.error,
-                            modifier = Modifier.size(32.dp)
-                        )
-                        Spacer(modifier = Modifier.width(12.dp))
-                        Text(
-                            text = stringResource(R.string.emergency_critical_warning),
-                            style = MaterialTheme.typography.titleLarge,
-                            fontWeight = FontWeight.Bold,
-                            color = MaterialTheme.colorScheme.error
-                        )
-                    }
+                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                    Icon(
+                        imageVector = Icons.Default.Warning,
+                        contentDescription = stringResource(R.string.cd_warning_icon),
+                        tint = MaterialTheme.colorScheme.error,
+                        modifier = Modifier.size(64.dp)
+                    )
+                    Spacer(modifier = Modifier.height(16.dp))
+                    Text(
+                        text = stringResource(R.string.emergency_critical_warning),
+                        style = MaterialTheme.typography.headlineMedium,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.error,
+                        textAlign = TextAlign.Center
+                    )
                     Spacer(modifier = Modifier.height(12.dp))
                     Text(
                         text = stringResource(R.string.emergency_dial_112),
-                        style = MaterialTheme.typography.bodyLarge,
+                        style = MaterialTheme.typography.titleLarge,
                         fontWeight = FontWeight.Bold,
-                        color = MaterialTheme.colorScheme.onErrorContainer
+                        color = MaterialTheme.colorScheme.onErrorContainer,
+                        textAlign = TextAlign.Center
+                    )
+                    Spacer(modifier = Modifier.height(16.dp))
+                    Text(
+                        text = "Creating emergency session...",
+                        style = MaterialTheme.typography.bodyLarge,
+                        color = MaterialTheme.colorScheme.onErrorContainer,
+                        textAlign = TextAlign.Center
                     )
                 }
             }
             
-            Spacer(modifier = Modifier.height(20.dp))
+            Spacer(modifier = Modifier.height(24.dp))
             
             // Prototype Notice
             Box(
@@ -152,43 +169,6 @@ fun EmergencyStartScreen(
                     )
                 }
             }
-            
-            Spacer(modifier = Modifier.height(24.dp))
-            
-            // What this tool does
-            AAYUSHCard(
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Column {
-                    Text(
-                        text = stringResource(R.string.emergency_what_this_does),
-                        style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.Bold,
-                        color = MaterialTheme.colorScheme.primary
-                    )
-                    Spacer(modifier = Modifier.height(8.dp))
-                    Text(
-                        text = stringResource(R.string.emergency_tool_description),
-                        style = MaterialTheme.typography.bodyMedium
-                    )
-                }
-            }
-            
-            Spacer(modifier = Modifier.height(32.dp))
-            
-            AAYUSHButton(
-                text = if (activeSession != null) {
-                    stringResource(R.string.emergency_continue_session)
-                } else {
-                    stringResource(R.string.emergency_start_session)
-                },
-                onClick = {
-                    if (activeSession == null) {
-                        viewModel.startEmergency()
-                    }
-                    onContinue()
-                }
-            )
         }
     }
 }
